@@ -1,0 +1,147 @@
+name: playwright
+
+# Manual dispatch only, for now. Runs consume grid capacity, so it stays opt-in
+# until we decide what should run automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Which entry to run'
+        type: choice
+        required: true
+        default: bdd
+        options:
+          - bdd       # playwright-bdd (primary): bddgen + playwright test
+          - regular   # non-BDD specs (secondary): playwright.regular.config.ts
+      grep:
+        description: 'Tag filter, e.g. "@smoke", "@sanity" (blank = all; BDD only)'
+        type: string
+        required: false
+        default: '@smoke'
+      grid_host:
+        description: 'Grid host:port — blank runs a LOCAL browser instead of the grid'
+        type: string
+        required: false
+        default: ''
+      playwright_mode:
+        description: 'ws = Playwright container fleet (recommended); selenium-remote routes via the Selenium hub'
+        type: choice
+        required: true
+        default: ws
+        options:
+          - ws
+          - selenium-remote
+      workers:
+        description: 'Parallel workers'
+        type: string
+        required: false
+        default: '3'
+
+concurrency:
+  group: playwright-${{ inputs.suite }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: playwright
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: playwright/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Browsers are only needed for a LOCAL run; a grid run uses the remote
+      # browser. Installing unconditionally keeps the local fallback working.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Dispatch inputs are never interpolated into a run: block — that is a
+      # command-injection shape. They go through env: and are quoted here.
+      - name: Show run configuration
+        env:
+          SUITE: ${{ inputs.suite }}
+          GREP: ${{ inputs.grep }}
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          PLAYWRIGHT_MODE: ${{ inputs.playwright_mode }}
+        run: |
+          echo "suite   : $SUITE"
+          echo "grep    : ${GREP:-<all>}"
+          echo "grid    : ${GRID_HOST:-<local browser>}"
+          echo "mode    : $PLAYWRIGHT_MODE"
+
+      - name: Warn when no grid is configured
+        env:
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+        run: |
+          if [ -z "$GRID_HOST" ]; then
+            echo "::warning::No grid_host set — Playwright will launch a LOCAL browser. A green run proves nothing about the grid."
+          fi
+
+      - name: Run tests
+        env:
+          SUITE: ${{ inputs.suite }}
+          GREP: ${{ inputs.grep }}
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          PLAYWRIGHT_MODE: ${{ inputs.playwright_mode }}
+          WORKERS: ${{ inputs.workers }}
+          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
+          BASE_URL: ${{ vars.BASE_URL }}
+          RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.suite }} · run ${{ github.run_number }}
+        run: |
+          if [ "$SUITE" = "regular" ]; then
+            npx playwright test --config=playwright.regular.config.ts --reporter=line
+          else
+            npx bddgen
+            args=(test --reporter=line)
+            if [ -n "$GREP" ]; then
+              args+=(--grep "$GREP")
+            fi
+            npx playwright "${args[@]}"
+          fi
+
+      # A --grep that matches nothing exits 0 having run no tests. Assert the
+      # JUnit/JSON report actually contains results.
+      - name: Guard against a zero-test run
+        if: always()
+        env:
+          GREP: ${{ inputs.grep }}
+          SUITE: ${{ inputs.suite }}
+        run: |
+          report=test-results/results.json
+          [ "$SUITE" = "regular" ] && report=test-results/regular-results.json
+          if [ ! -s "$report" ]; then
+            echo "::error::$report is missing or empty — no test produced a result." >&2
+            exit 1
+          fi
+          total=$(node -e "
+            const r = require('./' + process.argv[1]);
+            let n = 0;
+            const walk = (s) => { (s.specs || []).forEach(() => n++); (s.suites || []).forEach(walk); };
+            (r.suites || []).forEach(walk);
+            console.log(n);
+          " "$report")
+          echo "tests executed: $total"
+          if [ "$total" -eq 0 ]; then
+            echo "::error::0 tests matched '${GREP:-<all>}' — nothing ran." >&2
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-${{ inputs.suite }}-${{ github.run_number }}
+          path: |
+            playwright/test-results/
+            playwright/playwright-report/
+          retention-days: 14

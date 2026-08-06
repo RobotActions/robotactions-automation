@@ -1,0 +1,22 @@
+[project]
+name = "robotactions-playwright-python"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.50.0",
+    "pytest>=8.3.0",
+    "pytest-bdd>=8.1.0",
+    "pytest-html>=4.1.0",
+    "pytest-json-report>=1.5.0",
+    "pytest-playwright>=0.6.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+bdd_features_base_dir = "features/"
+addopts = "-v --tb=short --junitxml=reports/junit.xml"
+markers = [
+    "smoke: quick sanity tests",
+    "regression: full regression suite",
+    "homepage: homepage feature tests",
+]

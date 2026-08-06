@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "types": [
+      "node",
+      "@wdio/globals/types",
+      "expect-webdriverio",
+      "@wdio/appium-service",
+      "@wdio/cucumber-framework",
+      "@wdio/mocha-framework"
+    ]
+  },
+  "include": [
+    "features/**/*.ts",
+    "step-definitions/**/*.ts",
+    "pageobjects/**/*.ts",
+    "test/**/*.ts",
+    "wdio.conf.ts",
+    "wdio.mocha.conf.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,110 @@
+name: playwright-python
+
+# Manual dispatch only, for now. Runs consume grid capacity, so it stays opt-in
+# until we decide what should run automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Which entry to run'
+        type: choice
+        required: true
+        default: bdd
+        options:
+          - bdd       # pytest-bdd (primary): tests/step_defs/
+          - regular   # non-BDD tests (secondary): tests/ excluding step_defs
+      markers:
+        description: 'Marker expression, e.g. "smoke", "smoke or sanity" (blank = all)'
+        type: string
+        required: false
+        default: ''
+      grid_host:
+        description: 'Grid host:port — blank runs a LOCAL browser instead of the grid'
+        type: string
+        required: false
+        default: ''
+
+concurrency:
+  group: playwright-python-${{ inputs.suite }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: playwright-python
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Used by the report-parsing step below: stdlib ElementTree is
+          # vulnerable to XXE / billion-laughs on untrusted XML.
+          pip install defusedxml
+
+      # Browsers are only needed for a LOCAL run; a grid run uses the remote
+      # browser. Installing unconditionally keeps the local fallback working.
+      - name: Install Playwright browsers
+        run: python -m playwright install --with-deps chromium
+
+      # Dispatch inputs are never interpolated into a run: block — that is a
+      # command-injection shape. They go through env: and are quoted here.
+      - name: Show run configuration
+        env:
+          SUITE: ${{ inputs.suite }}
+          MARKERS: ${{ inputs.markers }}
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+        run: |
+          echo "suite   : $SUITE"
+          echo "markers : ${MARKERS:-<all>}"
+          echo "grid    : ${GRID_HOST:-<local browser>}"
+
+      - name: Warn when no grid is configured
+        env:
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+        run: |
+          if [ -z "$GRID_HOST" ]; then
+            echo "::warning::No grid_host set — Playwright will launch a LOCAL browser. A green run proves nothing about the grid."
+          fi
+
+      # ./ci.sh is the single entry point — the same script developers run
+      # locally, so a CI failure reproduces with one command instead of being
+      # re-derived from this YAML. It owns suite selection, the local-browser
+      # guard, the Playwright client/server version check and the zero-test
+      # guard; the step below only supplies inputs.
+      - name: Run tests
+        env:
+          # Inputs go through env and are quoted at the call site — never
+          # interpolated into the run: block, which is a command-injection
+          # shape (same rule as the "Show run configuration" step above).
+          SUITE: ${{ inputs.suite }}
+          MARKERS: ${{ inputs.markers }}
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
+          BASE_URL: ${{ vars.BASE_URL }}
+          RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.suite }} · run ${{ github.run_number }}
+          # Blank grid_host is an explicit request for a local browser; without
+          # this the guard in ci.sh (exit 2) would reject the run.
+          # Never auto-allow a local browser: if neither the input nor the
+          # RA_GRID_HOST secret supplies a host, ci.sh exits 2 rather than
+          # quietly running a local browser and reporting a meaningless pass.
+          ALLOW_LOCAL: '0'
+        run: ./ci.sh "$SUITE" "$MARKERS"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-python-${{ inputs.suite }}-${{ github.run_number }}
+          path: |
+            playwright-python/reports/
+          retention-days: 14

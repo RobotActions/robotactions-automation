@@ -1,0 +1,14 @@
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+.env
+test-results/
+reports/
+allure-results/
+allure-report/
+.features-gen/
+*.egg-info/
+.venv/
+venv/

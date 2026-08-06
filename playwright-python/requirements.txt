@@ -1,0 +1,12 @@
+# Pinned to the grid's Playwright: client and browser server must share a
+# version, or connect() fails with "Object with guid browser@... was not
+# bound in the connection" (or hangs). The grid serves playwright-novnc
+# v1.59.1; 1.59.1 has no Python 3.14 wheel, so 1.59.0 is the matching pin.
+# Bump this in lockstep with the grid image, not ahead of it.
+playwright==1.59.0
+python-dotenv>=1.0.0
+pytest>=8.3.0
+pytest-bdd>=8.1.0
+pytest-html>=4.1.0
+pytest-json-report>=1.5.0
+pytest-playwright>=0.6.0

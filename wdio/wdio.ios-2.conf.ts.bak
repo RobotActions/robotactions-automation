@@ -1,0 +1,74 @@
+import 'dotenv/config';
+import { createHash } from 'node:crypto';
+
+const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+const SUITE = process.env.RA_TESTSUITE || 'wdio-ios-2026-06-06';
+const RELEASE_ID = process.env.RA_RELEASE_ID || `run-${RUN_TIMESTAMP}`;
+
+const RA_CAPS = { 'ra:testsuite': SUITE, 'ra:releaseId': RELEASE_ID };
+const iosCap = {
+    platformName: 'iOS',
+    'appium:automationName': 'XCUITest',
+    'appium:browserName': 'safari',
+    ...RA_CAPS,
+};
+
+export const config = {
+    runner: 'local' as const,
+    specs: ['./features/**/*.feature'],
+    exclude: [],
+    maxInstances: 2,
+    capabilities: [iosCap, iosCap],
+
+    protocol: 'http',
+    hostname: (process.env.GRID_HOST || 'localhost').split(':')[0],
+    port: parseInt((process.env.GRID_HOST || '').split(':')[1] || process.env.GRID_PORT || '4444', 10),
+    path: '/',
+    headers: {
+        ...(process.env.AUTH_TOKEN ? { Authorization: `Bearer ${process.env.AUTH_TOKEN}` } : {}),
+    },
+
+    framework: 'cucumber',
+    cucumberOpts: {
+        require: ['./step-definitions/**/*.ts'],
+        backtrace: false,
+        dryRun: false,
+        failFast: false,
+        snippets: true,
+        source: true,
+        strict: false,
+        tagExpression: '',
+        timeout: 120_000,
+        ignoreUndefinedDefinitions: false,
+    },
+
+    reporters: [
+        'spec',
+        ['junit', {
+            outputDir: './test-results',
+            outputFileFormat: ({ cid }: { cid: string }) => `ios-2-results-${cid}.xml`,
+        }],
+    ],
+
+    baseUrl: process.env.BASE_URL || 'https://robotactions.com',
+    waitforTimeout: 15_000,
+    connectionRetryTimeout: 600_000,
+    connectionRetryCount: 5,
+
+    beforeScenario: async function (world: { pickle: { name: string } }) {
+        const name = world.pickle.name.slice(0, 200);
+        const testId = `WDIO-IOS-${createHash('sha1').update(name).digest('hex').slice(0, 8).toUpperCase()}`;
+        try { await (globalThis as any).browser.execute(`ra:job-name=${name}`); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.execute(`ra:test-id=${testId}`); } catch (_e) { /* best-effort */ }
+    },
+
+    afterStep: async function (_step: unknown, _scenario: unknown, result: { passed: boolean }) {
+        if (!result.passed) {
+            try { await (globalThis as any).browser.takeScreenshot(); } catch (_e) { /* ignore */ }
+        }
+    },
+
+    afterScenario: async function (_world: unknown) {
+        try { await (globalThis as any).browser.reloadSession(); } catch (_e) { /* best-effort */ }
+    },
+};

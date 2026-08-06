@@ -1,0 +1,131 @@
+name: wdio
+
+# Manual dispatch only, for now. Mobile runs consume real devices and grid
+# capacity, so this stays opt-in until we decide what should run automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: 'WDIO config — picks the target'
+        type: choice
+        required: true
+        default: wdio.mobileweb.conf.ts
+        options:
+          - wdio.mobileweb.conf.ts      # Chrome on a real Android device
+          - wdio.ios-mobileweb.conf.ts  # Safari on a real iOS device
+          - wdio.conf.ts                # Desktop Chrome via the grid (BDD)
+          - wdio.mocha.conf.ts          # Desktop Chrome, regular Mocha tests
+      tag_expression:
+        description: 'Cucumber tag expression, e.g. "@smoke", "@smoke and not @wip" (blank = all; ignored for Mocha)'
+        type: string
+        required: false
+        default: ''
+      grid_host:
+        description: 'Grid host:port (public endpoint in CI)'
+        type: string
+        required: true
+        default: ''
+      max_instances:
+        description: 'Parallel workers'
+        type: string
+        required: false
+        default: '1'
+
+# One run at a time per config — concurrent runs compete for the same handsets.
+concurrency:
+  group: wdio-${{ inputs.config }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Session creation on a real handset can take minutes.
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: wdio
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: wdio/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      # Dispatch inputs are never interpolated into a run: block — that is a
+      # command-injection shape. They go through env: and are quoted here.
+      - name: Show run configuration
+        env:
+          CONFIG: ${{ inputs.config }}
+          TAGS: ${{ inputs.tag_expression }}
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          MAX_INSTANCES: ${{ inputs.max_instances }}
+        run: |
+          echo "config    : $CONFIG"
+          echo "tags      : ${TAGS:-<all>}"
+          echo "grid      : $GRID_HOST"
+          echo "instances : $MAX_INSTANCES"
+
+      - name: Fail fast if the auth token is missing
+        env:
+          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
+        run: |
+          if [ -z "$AUTH_TOKEN" ]; then
+            echo "::error::secrets.RA_AUTH_TOKEN is not set — every session would 401." >&2
+            exit 1
+          fi
+
+      - name: Run WDIO
+        env:
+          CONFIG: ${{ inputs.config }}
+          TAGS: ${{ inputs.tag_expression }}
+          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          MAX_INSTANCES: ${{ inputs.max_instances }}
+          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
+          BASE_URL: ${{ vars.BASE_URL }}
+          RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.config }} · run ${{ github.run_number }}
+        run: |
+          args=(run "$CONFIG")
+          # Mocha has no tag expression; only pass it for the Cucumber configs.
+          if [ -n "$TAGS" ] && [ "$CONFIG" != "wdio.mocha.conf.ts" ]; then
+            args+=("--cucumberOpts.tagExpression=$TAGS")
+          fi
+          npx wdio "${args[@]}"
+
+      # A tag expression that matches nothing runs 0 scenarios and WDIO still
+      # exits 0 — a green build that tested nothing. Assert the JUnit output
+      # actually contains test cases.
+      - name: Guard against a zero-test run
+        if: always()
+        env:
+          TAGS: ${{ inputs.tag_expression }}
+        run: |
+          shopt -s nullglob
+          reports=(test-results/*.xml)
+          if [ ${#reports[@]} -eq 0 ]; then
+            echo "::error::no JUnit report in test-results/ — nothing produced a result." >&2
+            exit 1
+          fi
+          total=$(grep -ho 'tests="[0-9]*"' "${reports[@]}" | grep -o '[0-9]*' | awk '{s+=$1} END {print s+0}')
+          echo "tests executed: ${total:-0}"
+          if [ "${total:-0}" -eq 0 ]; then
+            echo "::error::0 tests matched '${TAGS:-<all>}' — nothing ran." >&2
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wdio-${{ inputs.config }}-${{ github.run_number }}
+          path: |
+            wdio/test-results/
+            wdio/reports/
+          retention-days: 14

@@ -1,0 +1,30 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "1.0.0",
+  "description": "BDD test automation with Playwright and playwright-bdd",
+  "scripts": {
+    "test": "npx bddgen && npx playwright test --headed --workers=1",
+    "test:tagged": "npx bddgen && npx playwright test --headed --workers=1 --grep",
+    "test:regular": "npx playwright test --config=playwright.regular.config.ts",
+    "test:debug": "npx bddgen && npx playwright test --debug",
+    "report": "npx playwright show-report",
+    "report:allure": "allure serve allure-results",
+    "report:monocart": "open test-results/monocart-report/index.html",
+    "report:junit": "cat test-results/junit.xml",
+    "bddgen": "npx bddgen",
+    "bddgen:export": "npx bddgen export"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.5.0",
+    "allure-playwright": "^3.9.0",
+    "dotenv": "^16.6.1",
+    "monocart-reporter": "^2.11.2",
+    "playwright-bdd": "^8.4.0",
+    "playwright-ctrf-json-reporter": "^0.0.29",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}

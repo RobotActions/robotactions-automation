@@ -1,0 +1,48 @@
+# Playwright + playwright-bdd Template
+
+BDD test automation with [playwright-bdd](https://github.com/vitalets/playwright-bdd) and [Playwright Test](https://playwright.dev/).
+
+## Quick Start
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+## Project Structure
+
+```
+├── features/          # Gherkin feature files (.feature)
+├── steps/             # BDD step definitions + fixtures
+├── pages/             # Page Object Model classes
+├── tests/             # Regular (non-BDD) Playwright tests
+├── playwright.config.ts         # BDD config (primary)
+└── playwright.regular.config.ts # Regular test config (secondary)
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm test` | Run BDD tests (feature files) |
+| `npm run test:regular` | Run regular Playwright tests |
+| `npm run test:headed` | Run BDD tests in headed browser |
+| `npm run test:debug` | Run BDD tests with Playwright Inspector |
+| `npm run report` | Open HTML test report |
+
+## Remote Grid Execution
+
+Set environment variables to run against a Selenium Grid:
+
+```bash
+SELENIUM_REMOTE_URL=http://grid:4444 \
+SELENIUM_REMOTE_HEADERS='{"Authorization":"Bearer <token>"}' \
+npm test
+```
+
+## Placeholders
+
+Replace these before running:
+- `{{PROJECT_NAME}}` — Your project name
+- `{{BASE_URL}}` — Application URL under test
