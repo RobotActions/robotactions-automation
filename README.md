@@ -7,6 +7,11 @@ Playwright endpoint.
 Each template is a complete project, not a snippet: page objects, BDD features, fixtures,
 reporting, and a CI entry point that runs the same way on a laptop and in GitHub Actions.
 
+**Already have a test suite?** You don't need a template — [**Connecting to the
+grid**](docs/connecting-to-the-grid.md) has the connection recipe for each framework,
+plus how to report pass/fail back to the dashboard and what the common failure modes
+actually mean.
+
 | Template | Stack | Runs against |
 |---|---|---|
 | [`playwright-python`](playwright-python) | Playwright + pytest-bdd | Grid browsers (Playwright direct-WS) |
@@ -27,19 +32,30 @@ pip install -r requirements.txt
 ./ci.sh                       # or: pytest
 ```
 
+The shipped example suites drive the RobotActions marketing site, so a fresh clone is
+green immediately and you can see a real run in the dashboard before writing anything.
+Point `BASE_URL` at your own application and replace the page objects and features — that
+is what the templates are for.
+
 | Variable | Meaning |
 |---|---|
 | `GRID_URL` / `GRID_HOST` | Your grid endpoint, `host:port`. Blank runs a **local** browser. |
-| `AUTH_TOKEN` | Grid bearer token. Sent as `?token=` on WS upgrades and as a header elsewhere. |
+| `AUTH_TOKEN` | Grid bearer token. Rides the URL path (`/t/<token>/…`) for Selenium/Appium and `?token=` on Playwright's WS upgrade — the templates handle this for you. |
 | `BASE_URL` | The application under test. |
 | `RA_TESTSUITE` | Suite label the grid stores against the session, so runs are identifiable in the dashboard. |
 
 ## CI
 
-Workflows live in [`.github/workflows`](.github/workflows) and are **manual dispatch only** —
-runs consume grid capacity, so nothing fires automatically. Each takes a suite and an
-optional marker expression, uploads JUnit XML + HTML reports as artifacts, and fails the
-run if zero tests matched.
+Day to day these templates run **locally** — `./ci.sh` or the framework's own runner.
+GitHub Actions is here for the occasional sanity run you kick off deliberately.
+
+Workflows live in [`.github/workflows`](.github/workflows) and are **manual dispatch
+only** (`on: workflow_dispatch`): nothing fires on push, on PR, or on a schedule, because
+runs consume grid capacity. Each takes a suite and an optional marker expression, uploads
+JUnit XML + HTML reports as artifacts, and fails the run if zero tests matched.
+
+If you fork this and *do* want automatic runs, add the trigger yourself — and size your
+grid for it first.
 
 Configure these once in **Settings → Secrets and variables → Actions**:
 

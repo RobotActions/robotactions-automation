@@ -2,6 +2,16 @@
 
 BDD test automation with [WebdriverIO v9](https://webdriver.io/) and [Cucumber](https://cucumber.io/).
 
+> **Running this against a RobotActions grid?** You need two things from your account: the
+> **grid URL** and an **auth token**. Put them in `.env` (see `.env.example`) — never in a
+> committed file. Connection details, auth, reporting results back to the dashboard and a
+> troubleshooting table live in
+> [**docs/connecting-to-the-grid.md**](../docs/connecting-to-the-grid.md).
+>
+> These tests need a real device, so unlike the browser templates there is no local
+> fallback — a grid (or a locally attached device with Appium running) is required.
+
+
 ## Quick Start
 
 ```bash
