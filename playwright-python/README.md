@@ -2,6 +2,16 @@
 
 BDD test automation with [pytest-bdd](https://github.com/pytest-dev/pytest-bdd) and [Playwright for Python](https://playwright.dev/python/).
 
+> **Running this against a RobotActions grid?** You need two things from your account: the
+> **grid URL** and an **auth token**. Put them in `.env` (see `.env.example`) — never in a
+> committed file. Connection details, auth, reporting results back to the dashboard and a
+> troubleshooting table live in
+> [**docs/connecting-to-the-grid.md**](../docs/connecting-to-the-grid.md).
+>
+> With no grid configured these tests run against a **local** browser instead, which is
+> fine for development but proves nothing about the grid.
+
+
 ## Quick Start
 
 ```bash
