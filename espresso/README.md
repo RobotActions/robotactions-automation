@@ -51,6 +51,35 @@ curl "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/runs/nr-…"
 # → { "runId", "status", "devices", "result": { "passed", "failed", "ignored", "reportDir", "durationMs" } }
 ```
 
+### Bundles over ~100 MB, or anything going through Cloudflare
+
+The single-request submit above is fine on a LAN. Through Cloudflare it is not: the free
+plan rejects a request body over 100 MB, and a real app bundle exceeds that. Push the
+bundle in chunks instead, then start the run against the assembled result.
+
+```bash
+split -b 45m bundle.zip chunks/part.          # any size <= 50 MB
+N=$(ls chunks | wc -l)
+
+UP=$(curl -s -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads?name=bundle.zip&chunks=$N" \
+     | jq -r .uploadId)
+
+i=0; for f in chunks/part.*; do
+  curl -s -X PUT "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads/$UP/$i" --data-binary @"$f" > /dev/null
+  i=$((i+1))
+done
+
+curl -s -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads/$UP/complete"
+# → { "bundleId": "up-…", "size": 14236151 }
+
+curl -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/runs?platform=android&devices=<serial>&bundleId=$UP"
+```
+
+Chunks are sent as **raw bytes** — do not base64 them. Base64 inflates the payload ~33%,
+so a 50 MB chunk becomes a ~67 MB body and gives back the headroom the cap exists to
+protect. The per-chunk ceiling is returned as `chunkLimitBytes` when you begin the upload
+(50 MB by default); a larger chunk is refused with `413`.
+
 Get the serials from `adb devices`, or from the grid so you only target devices it
 actually has:
 
