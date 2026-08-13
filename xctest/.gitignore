@@ -1,0 +1,6 @@
+SampleApp.xcodeproj/
+build/
+DerivedData/
+*.xcresult
+*.zip
+.DS_Store
