@@ -17,7 +17,7 @@ Feature: robotactions.com smoke — homepage + nav + key surfaces
     # H1 rotates between 3 phrases (~20 s cycle) — assert one of the known
     # set rather than a single brittle string.
     Then the hero heading should be one of:
-      | From user story to raised defect    |
+      | Real devices                        |
       | Real Android & iOS devices          |
       | Talk to your device                 |
     # Verified via Playwright MCP at 360×740 + 768×1024 viewports — these

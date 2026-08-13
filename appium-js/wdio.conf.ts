@@ -6,10 +6,21 @@ const platform = (process.env.PLATFORM || 'android').toLowerCase();
 const androidCapability = {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
-    'appium:deviceName': process.env.DEVICE_UDID || 'emulator-5554',
-    'appium:udid': process.env.DEVICE_UDID || 'emulator-5554',
-    'appium:appPackage': process.env.APP_PACKAGE || 'com.example.app',
-    'appium:appActivity': process.env.APP_ACTIVITY || '.MainActivity',
+    // Only pin a device when DEVICE_UDID is given. Defaulting these to a
+    // placeholder device asks the grid for hardware that does not exist, which
+    // it answers with "No nodes support the capabilities in the request".
+    // Omitting them lets the grid auto-distribute to any free Android node.
+    ...(process.env.DEVICE_UDID
+        ? {
+              'appium:deviceName': process.env.DEVICE_UDID,
+              'appium:udid': process.env.DEVICE_UDID,
+          }
+        : {}),
+    // Only pin an app when provided — omitting it lets a session start without
+    // launching one (device-level smoke), and avoids failing on a placeholder
+    // package that is not installed.
+    ...(process.env.APP_PACKAGE ? { 'appium:appPackage': process.env.APP_PACKAGE } : {}),
+    ...(process.env.APP_ACTIVITY ? { 'appium:appActivity': process.env.APP_ACTIVITY } : {}),
     'appium:noReset': true,
     'appium:autoGrantPermissions': true,
     'appium:newCommandTimeout': 120,
@@ -21,8 +32,14 @@ const androidCapability = {
 const iosCapability = {
     platformName: 'iOS',
     'appium:automationName': 'XCUITest',
-    'appium:deviceName': process.env.DEVICE_UDID || 'iPhone Simulator',
-    'appium:udid': process.env.DEVICE_UDID || '',
+    // As with Android: pin a device only when asked, so the grid can
+    // auto-distribute to any free iOS node otherwise.
+    ...(process.env.DEVICE_UDID
+        ? {
+              'appium:deviceName': process.env.DEVICE_UDID,
+              'appium:udid': process.env.DEVICE_UDID,
+          }
+        : {}),
     // Only pin a bundleId when provided — omitting it lets a session start
     // without launching an app (device-level smoke), and avoids the
     // "App with bundle identifier 'com.example.app' unknown" failure.

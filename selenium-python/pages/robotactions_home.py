@@ -22,6 +22,7 @@ Dropdown behaviour note:
 from __future__ import annotations
 
 import logging
+import re
 import warnings
 from typing import List
 
@@ -32,6 +33,15 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from pages.base_page import BasePage, Locator
 
 logger = logging.getLogger(__name__)
+
+
+def _collapse_ws(value: str) -> str:
+    """Collapse every run of whitespace to a single space and strip the ends.
+
+    Headings that wrap with a <br> yield text containing newlines, which makes a
+    naive substring test fail against a phrase written with ordinary spaces.
+    """
+    return re.sub(r"\s+", " ", value or "").strip()
 
 # The three H1 phrases that rotate on the hero section (~20s cycle).
 # Tests must assert against this set, not a single fixed string.
@@ -170,9 +180,15 @@ class RobotActionsHomePage(BasePage):
         return self.wait_visible(self.HERO_HEADING).text
 
     def hero_heading_matches_known_phrase(self) -> bool:
-        """Return True when the current H1 text contains at least one known phrase."""
-        text = self.hero_heading_text()
-        return any(phrase in text for phrase in KNOWN_HERO_PHRASES)
+        """Return True when the current H1 text contains at least one known phrase.
+
+        Whitespace is collapsed on both sides before comparing. The H1 wraps with
+        a <br>, so its text arrives as "Real devices,\nzero lag." while the known
+        phrase reads "Real devices, zero lag" — a match that a literal substring
+        test misses purely on the line break.
+        """
+        text = _collapse_ws(self.hero_heading_text())
+        return any(_collapse_ws(phrase) in text for phrase in KNOWN_HERO_PHRASES)
 
     def is_stable_tagline_visible(self) -> bool:
         """Return True when the stable hero tagline is visible."""
