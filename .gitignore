@@ -3,7 +3,12 @@ __pycache__/
 *.pyc
 .pytest_cache/
 dist/
+build/
 .env
+# Every .env variant, including hand-made backups — these carry grid tokens and
+# this repository is public.
+.env.*
+!.env.example
 test-results/
 reports/
 allure-results/
@@ -12,3 +17,4 @@ allure-report/
 *.egg-info/
 .venv/
 venv/
+.DS_Store
