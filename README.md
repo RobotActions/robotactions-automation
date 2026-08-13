@@ -40,6 +40,7 @@ RobotActions toolchain:
 | [`appium-js`](appium-js) | Appium + WebdriverIO | Real Android / iOS devices |
 | [`selenium-java`](selenium-java) | Selenium + Appium + Cucumber-JVM (Java 17) | Grid browsers, mobile web, real devices |
 | [`espresso`](espresso) | Native Android instrumented tests (Espresso) | Real Android devices, on-device via the native runner |
+| [`xctest`](xctest) | Native iOS UI tests (XCUITest) | Real iOS devices, on-device via the native runner |
 
 ## Quick start
 

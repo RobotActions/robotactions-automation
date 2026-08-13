@@ -1,0 +1,37 @@
+# xcodegen project spec — run `xcodegen generate` to produce SampleApp.xcodeproj
+# (hand-maintaining a .pbxproj is noise; the spec is the source of truth).
+name: SampleApp
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  SampleApp:
+    type: application
+    platform: iOS
+    sources: [Sources/App]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.SampleApp
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+  SampleAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: SampleApp
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.SampleAppUITests
+        TEST_TARGET_NAME: SampleApp
+schemes:
+  SampleApp:
+    build:
+      targets:
+        SampleApp: all
+        SampleAppUITests: [test]
+    test:
+      targets: [SampleAppUITests]
