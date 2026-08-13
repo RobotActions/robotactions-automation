@@ -58,10 +58,10 @@ const iosCapability = {
 
 const activeCapability = platform === 'ios' ? iosCapability : androidCapability;
 
-// GRID_HOST may include port (e.g. "localhost:4723")
-const gridHost = process.env.GRID_HOST || 'localhost:4723';
+// GRID_HOST may include port (e.g. "localhost:5555")
+const gridHost = process.env.GRID_HOST || 'localhost:5555';
 const [hostname, portStr] = gridHost.split(':');
-const port = parseInt(portStr || '4723', 10);
+const port = parseInt(portStr || '5555', 10);
 
 export const config = {
     runner: 'local' as const,
