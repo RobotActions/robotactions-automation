@@ -22,7 +22,7 @@ export const config = {
 
     protocol: 'http',
     hostname: (process.env.GRID_HOST || 'localhost').split(':')[0],
-    port: parseInt((process.env.GRID_HOST || '').split(':')[1] || process.env.GRID_PORT || '4444', 10),
+    port: parseInt((process.env.GRID_HOST || '').split(':')[1] || process.env.GRID_PORT || '5555', 10),
     path: '/',
     headers: {
         ...(process.env.AUTH_TOKEN ? { Authorization: `Bearer ${process.env.AUTH_TOKEN}` } : {}),
