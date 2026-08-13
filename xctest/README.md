@@ -34,6 +34,27 @@ xcodebuild build-for-testing \
 
 Requires Xcode. Only the compiled products are uploaded; the tests execute on the device.
 
+## Known limitation on CoreDevice-held hosts
+
+`xcodebuild test-without-building` installs the test runner through **CoreDevice**, and on
+some iOS 17+/18+ pairings that host does not advertise the install capability:
+
+```
+ERROR: The capability "Install Application" is not supported by this device.
+       (com.apple.dt.CoreDeviceError 1001, com.apple.coredevice.feature.installapp)
+```
+
+This is **not** a signing problem and **not** a device restriction. On a fleet where this
+was hit, the same bundle installed cleanly over the classic `installation_proxy` service
+(`ideviceinstaller install SampleApp.app` → `InstallComplete`), and the device advertised
+`uninstallapp`, `launchapplication` and `installroot` while withholding only `installapp`.
+Pre-installing both the app and the `-Runner` app does not help: `xcodebuild` re-attempts
+its own CoreDevice install regardless and fails before any test executes.
+
+If you hit this, the bundle is fine — the gap is between `xcodebuild` and that host's
+CoreDevice. The same devices are driven successfully by Appium using the preinstalled-WDA
+path (`USE_PREINSTALLED_WDA=true`), which avoids `xcodebuild` entirely.
+
 ## Run on the grid's native runner
 
 Zip the built products (the `.app` bundles + the `.xctestrun`), then submit through the same
