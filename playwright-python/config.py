@@ -48,7 +48,7 @@ def _endpoint() -> tuple[str, bool] | None:
     """Return ``(host:port, secure)`` for the grid, or None when unset.
 
     The scheme is inferred rather than hardcoded: locally the grid is plain
-    ws:// on ``localhost:4444``; the public endpoint used from CI is wss:// on
+    ws:// on ``localhost:5555``; the public endpoint used from CI is wss:// on
     443. Hardcoding ``ws://`` would send cleartext to a TLS endpoint.
     """
     raw = _str("GRID_URL") or _str("GRID_HOST")

@@ -64,12 +64,12 @@ export const config = {
 
     capabilities,
 
-    // Selenium Grid connection. GRID_HOST may include a port; defaults to 4444.
+    // Selenium Grid connection. GRID_HOST may include a port; defaults to 5555.
     // AUTH_TOKEN rides the /t/<token>/ path prefix (proxy strips it) — the most
     // reliable auth path for WDIO.
     protocol: 'http' as const,
     hostname: (process.env.GRID_HOST || 'localhost').split(':')[0],
-    port: parseInt((process.env.GRID_HOST || '').split(':')[1] || process.env.GRID_PORT || '4444', 10),
+    port: parseInt((process.env.GRID_HOST || '').split(':')[1] || process.env.GRID_PORT || '5555', 10),
     path: process.env.AUTH_TOKEN ? `/t/${process.env.AUTH_TOKEN}/` : '/',
     headers: {
         ...(process.env.AUTH_TOKEN ? { Authorization: `Bearer ${process.env.AUTH_TOKEN}` } : {}),

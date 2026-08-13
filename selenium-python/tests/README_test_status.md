@@ -14,7 +14,7 @@ Files:
 | `driver.execute_script('ra:setTestStatus', {status, reason, testName?, testSuite?})` | structured args (preferred) | ✓ |
 | `driver.execute_script('ra:job-result=failed:<reason>')` | legacy string-encoded | ✓ |
 | `POST :3001/api/sessions/:id/result` (broadcaster) | JSON `{status, reason, …}` | ✓ |
-| `POST :4444/api/sessions/:id/result` (grid proxy mirror — NEW) | JSON `{status, reason, …}` | ✓ |
+| `POST :5555/api/sessions/:id/result` (grid proxy mirror — NEW) | JSON `{status, reason, …}` | ✓ |
 
 Passing sessions are quiet (no synthetic row). Reserve the noisy timeline marker for failures.
 
@@ -34,7 +34,7 @@ python3 -m venv .venv
 
 ### Run the BDD scenarios
 ```bash
-GRID_URL=http://localhost:4444 \
+GRID_URL=http://localhost:5555 \
 AUTH_TOKEN=<your-jwt> \
 BASE_URL=https://example.com \
 BROADCASTER_URL=http://localhost:3001 \
@@ -43,7 +43,7 @@ BROADCASTER_URL=http://localhost:3001 \
 
 ### Run the standalone smoke test
 ```bash
-GRID_URL=http://localhost:4444 \
+GRID_URL=http://localhost:5555 \
 AUTH_TOKEN=<your-jwt> \
 BASE_URL=https://example.com \
 .venv/bin/pytest tests/test_ra_set_test_status.py -v
@@ -60,7 +60,7 @@ BASE_URL=https://example.com \
 
 ## Auth setup
 
-`POST /session` on the grid proxy 4444 remote-validates the JWT against the parent RemoteDeviceServer (`TOKEN_VALIDATE_URL=http://localhost:8000/auth/api-tokens/validate`).
+`POST /session` on the grid proxy 5555 remote-validates the JWT against the parent RemoteDeviceServer (`TOKEN_VALIDATE_URL=http://localhost:8000/auth/api-tokens/validate`).
 
 Three options for `AUTH_TOKEN`:
 
@@ -76,7 +76,7 @@ node -e "console.log(require('jsonwebtoken').sign({email:'you@local'}, '<JWT_SEC
 ```
 ⚠️ Revert `.env` after — this bypasses parent revocation.
 
-**(c) Existing session id (REST paths only)** — the REST endpoints (3001 + 4444) don't need `createSession`, so the standalone smoke test's REST-only assertions work against any session id already in the DB. Pass an existing UUID and skip the magic-script tests.
+**(c) Existing session id (REST paths only)** — the REST endpoints (3001 + 5555) don't need `createSession`, so the standalone smoke test's REST-only assertions work against any session id already in the DB. Pass an existing UUID and skip the magic-script tests.
 
 ## Expected dashboard outcome
 

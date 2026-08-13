@@ -4,7 +4,7 @@ appium-grid-service PR #97. Use this when you want a quick pytest run
 without the BDD overhead.
 
 Run:
-    GRID_URL=http://localhost:4444 \\
+    GRID_URL=http://localhost:5555 \\
     AUTH_TOKEN=<your-jwt> \\
     BASE_URL=https://example.com \\
     pytest tests/test_ra_set_test_status.py -v
@@ -136,14 +136,14 @@ class TestRaSetTestStatus:
         assert row["resultMessage"] == "REST via broadcaster"
 
     def test_fail_via_rest_on_grid_proxy(self, browser, auth_token, base_url, grid_url):
-        """POST /api/sessions/:id/result on the grid proxy (port 4444).
+        """POST /api/sessions/:id/result on the grid proxy (port 5555).
 
         Mirror of the broadcaster endpoint added on PR #97 so test frameworks
         pointing at the grid URL don't need to discover a second port.
         """
         sid = browser.session_id
         browser.get(NAV_URL)
-        # grid_url already strips trailing /wd/hub if present; this hits 4444
+        # grid_url already strips trailing /wd/hub if present; this hits 5555
         # directly with the same body shape as the broadcaster endpoint.
         proxy_base = grid_url.replace("/wd/hub", "").rstrip("/")
         code, body = _api_post(

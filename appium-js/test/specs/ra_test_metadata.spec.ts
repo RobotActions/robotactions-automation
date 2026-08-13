@@ -8,7 +8,7 @@
  *   release_id  ← ra:releaseId cap / ra:release-id=<v> magic    / REST releaseId
  *
  * Run:
- *   GRID_HOST=localhost:4444 \
+ *   GRID_HOST=localhost:5555 \
  *   AUTH_TOKEN=<your-jwt> \
  *   BROADCASTER_URL=http://localhost:3001 \
  *   PLATFORM=android \
@@ -20,7 +20,7 @@
 import { remote, Browser } from 'webdriverio';
 import { expect } from 'chai';
 
-const GRID_HOST = process.env.GRID_HOST || 'localhost:4444';
+const GRID_HOST = process.env.GRID_HOST || 'localhost:5555';
 const BROADCASTER_URL = process.env.BROADCASTER_URL || 'http://localhost:3001';
 const AUTH_TOKEN = process.env.AUTH_TOKEN || '';
 const PLATFORM = (process.env.PLATFORM || 'android').toLowerCase();
@@ -67,7 +67,7 @@ async function newSession(extraCaps: Record<string, unknown> = {}): Promise<Brow
   return remote({
     protocol: 'http',
     hostname,
-    port: parseInt(portStr || '4444', 10),
+    port: parseInt(portStr || '5555', 10),
     path,
     logLevel: 'warn',
     capabilities: { ...baseCapabilities(), ...extraCaps },
