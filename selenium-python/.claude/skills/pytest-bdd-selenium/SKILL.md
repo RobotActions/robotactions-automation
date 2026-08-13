@@ -32,7 +32,7 @@ def _executor_url(grid_url: str, auth_token: str) -> str:
     return grid_url
 ```
 
-`.env` provides `GRID_HOST=localhost:4444` + `AUTH_TOKEN=<jwt>` + `BASE_URL=https://robotactions.com`. The `browser` fixture builds `webdriver.Remote(command_executor=executor_url, options=ChromeOptions())`.
+`.env` provides `GRID_HOST=localhost:5555` + `AUTH_TOKEN=<jwt>` + `BASE_URL=https://robotactions.com`. The `browser` fixture builds `webdriver.Remote(command_executor=executor_url, options=ChromeOptions())`.
 
 ## Adding a step for an existing feature
 

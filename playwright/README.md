@@ -46,7 +46,7 @@ npm test
 Set environment variables to run against a Selenium Grid:
 
 ```bash
-SELENIUM_REMOTE_URL=http://grid:4444 \
+SELENIUM_REMOTE_URL=http://grid:5555 \
 SELENIUM_REMOTE_HEADERS='{"Authorization":"Bearer <token>"}' \
 npm test
 ```

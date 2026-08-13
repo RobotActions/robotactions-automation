@@ -70,7 +70,7 @@ Set environment variables:
 
 ```bash
 GRID_HOST=grid.example.com \
-GRID_PORT=4444 \
+GRID_PORT=5555 \
 AUTH_TOKEN=your-bearer-token \
 BASE_URL=https://app.example.com \
 npm test

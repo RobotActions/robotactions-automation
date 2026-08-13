@@ -34,7 +34,7 @@ export interface GridConnection {
  * `GRID_HOST` (`host` or `host:port`), plus `GRID_PORT`.
  *
  * Scheme is inferred rather than hardcoded: locally the grid is plain HTTP on
- * `localhost:4444`, while the public endpoint used from CI is HTTPS on 443.
+ * `localhost:5555`, while the public endpoint used from CI is HTTPS on 443.
  * Every conf file used to hardcode `protocol: 'http'`, so pointing one at the
  * public host would have sent cleartext to a TLS endpoint and failed with an
  * opaque connection error.
@@ -52,7 +52,7 @@ export interface GridOptions {
 
 export function gridConnection(options: GridOptions = {}): GridConnection {
     const rawUrl = str('GRID_URL');
-    const rawHost = str('GRID_HOST', 'localhost:4444');
+    const rawHost = str('GRID_HOST', 'localhost:5555');
     const raw = rawUrl || rawHost;
 
     // Explicit override always wins over inference.
@@ -71,7 +71,7 @@ export function gridConnection(options: GridOptions = {}): GridConnection {
     const loopback = LOOPBACK.some((h) => hostname.startsWith(h));
     const port = portFromHost
         ? parseInt(portFromHost, 10)
-        : int('GRID_PORT', protocol === 'https' || !loopback ? 443 : 4444);
+        : int('GRID_PORT', protocol === 'https' || !loopback ? 443 : 5555);
 
     if (!protocol) {
         // A bare host: loopback stays HTTP, anything else is assumed to be the

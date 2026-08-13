@@ -4,7 +4,7 @@
  * wdio.conf.ts (desktop) so the capabilities differ and it uses only the
  * `spec` reporter (the base config's html-nice reporter pin is unpublished).
  *
- * Run: AUTH_TOKEN=... GRID_HOST=localhost:4444 npx wdio run wdio.mobileweb.conf.ts
+ * Run: AUTH_TOKEN=... GRID_HOST=localhost:5555 npx wdio run wdio.mobileweb.conf.ts
  */
 // Environment is read only in ./config.ts — never process.env directly here.
 import { gridConnection, maxInstances, suiteName } from './config';

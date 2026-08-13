@@ -32,7 +32,7 @@ if (authToken) {
 }
 ```
 
-`.env` provides `GRID_HOST=localhost:4444` + `AUTH_TOKEN=<jwt>`. No code changes needed to switch grids.
+`.env` provides `GRID_HOST=localhost:5555` + `AUTH_TOKEN=<jwt>`. No code changes needed to switch grids.
 
 ## Adding a step for an existing feature
 
@@ -100,7 +100,7 @@ Then('no console errors should have been logged', async ({ consoleErrors }) => {
 ```
 
 Translates to `npx playwright test --workers=10 --repeat-each=3 --grep=@load`. Each worker spins its own browser context (grid-side: separate WebDriver session). At N=10 against the local grid, expect:
-- 10 concurrent `POST /session` against port 4444
+- 10 concurrent `POST /session` against port 5555
 - 10 active sessions on the dashboard's Running Sessions panel
 - Container spawn pace bounded by `MAX_SESSIONS_PER_IDENTITY` (default 5) — over-budget requests 503 with a `Retry-After` header
 - `--repeat-each` runs each scenario N times sequentially per worker, so total sessions = workers × repeats × matching-scenarios

@@ -2,7 +2,7 @@
  * Mobile-web WDIO config: Safari on a real iOS device via Appium XCUITest +
  * the Selenium Grid (device-node browserName=safari slot).
  *
- * Run: AUTH_TOKEN=... GRID_HOST=localhost:4444 npx wdio run wdio.ios-mobileweb.conf.ts
+ * Run: AUTH_TOKEN=... GRID_HOST=localhost:5555 npx wdio run wdio.ios-mobileweb.conf.ts
  *
  * NOTE: the feature file carries @android because it was written for the
  * Android run; the tagExpression here is @mobileweb so the same scenario is

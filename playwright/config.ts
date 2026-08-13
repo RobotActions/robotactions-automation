@@ -77,7 +77,7 @@ interface Endpoint {
  * Resolves the grid endpoint and whether it is TLS.
  *
  * Scheme is inferred rather than hardcoded: locally the grid is plain HTTP on
- * `localhost:4444`, while the public endpoint used from CI is HTTPS on 443.
+ * `localhost:5555`, while the public endpoint used from CI is HTTPS on 443.
  * Hardcoding `http://` / `ws://` (as both configs did) would send cleartext to
  * a TLS endpoint and fail with an opaque connection error.
  */

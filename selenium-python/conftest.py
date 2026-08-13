@@ -82,7 +82,7 @@ def grid_url() -> str:
     """Selenium / Appium Grid URL — built from GRID_HOST or GRID_URL env var."""
     if os.environ.get("GRID_URL"):
         return os.environ["GRID_URL"]
-    grid_host = os.environ.get("GRID_HOST", "localhost:4444")
+    grid_host = os.environ.get("GRID_HOST", "localhost:5555")
     return f"http://{grid_host}"
 
 

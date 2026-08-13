@@ -5,7 +5,7 @@ description: WebdriverIO v9 + Cucumber (TypeScript) expertise — feature file �
 
 # WebdriverIO + Cucumber (TypeScript)
 
-The primary BDD pattern: `.feature` → `@wdio/cucumber-framework` decorators → WDIO runner. WDIO speaks W3C WebDriver directly (it's NOT a Selenium binding); the same grid endpoint serves both because the proxy at port 4444 forwards W3C commands transparently.
+The primary BDD pattern: `.feature` → `@wdio/cucumber-framework` decorators → WDIO runner. WDIO speaks W3C WebDriver directly (it's NOT a Selenium binding); the same grid endpoint serves both because the proxy at port 5555 forwards W3C commands transparently.
 
 ## File layout
 
@@ -29,7 +29,7 @@ const authToken = process.env.AUTH_TOKEN || '';
 export const config = {
   protocol: 'http',
   hostname: (process.env.GRID_HOST || 'localhost').split(':')[0],
-  port: parseInt((process.env.GRID_HOST || '').split(':')[1] || '4444', 10),
+  port: parseInt((process.env.GRID_HOST || '').split(':')[1] || '5555', 10),
   path: authToken ? `/t/${authToken}` : '/',
   // ...
 };

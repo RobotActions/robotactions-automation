@@ -10,7 +10,7 @@ One test is an intentional fail so operators can see the screenshot + auto-seeke
 video inline.
 
 Run:
-    GRID_URL=http://localhost:4444 \\
+    GRID_URL=http://localhost:5555 \\
     AUTH_TOKEN=<jwt> \\
     pytest tests/test_robotactions_suite.py -v
 

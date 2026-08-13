@@ -97,7 +97,7 @@ fails when the test count is zero.
 Set environment variables:
 
 ```bash
-GRID_URL=http://grid:4444 \
+GRID_URL=http://grid:5555 \
 AUTH_TOKEN=your-bearer-token \
 BASE_URL=https://app.example.com \
 pytest tests/step_defs/ -v
