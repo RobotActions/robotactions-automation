@@ -38,6 +38,7 @@ RobotActions toolchain:
 | [`selenium-python`](selenium-python) | Selenium + pytest-bdd | Grid browsers, mobile web, real devices |
 | [`wdio`](wdio) | WebdriverIO + TypeScript | Grid browsers, mobile web, real devices |
 | [`appium-js`](appium-js) | Appium + WebdriverIO | Real Android / iOS devices |
+| [`selenium-java`](selenium-java) | Selenium + Appium + Cucumber-JVM (Java 17) | Grid browsers, mobile web, real devices |
 
 ## Quick start
 
