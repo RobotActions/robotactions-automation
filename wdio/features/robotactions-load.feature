@@ -12,9 +12,9 @@ Feature: RobotActions homepage — full nav coverage + load profile
   # ── Hero + primary CTAs ─────────────────────────────────────────────
   @smoke
   Scenario: Hero section renders the headline + primary CTAs
-    Then the hero heading should contain "From user story to raised defect"
+    Then the hero heading should contain "Real devices"
     And I should see the "Start Free Trial" button
-    And I should see the "See how it works" button
+    And I should see the "Sign in / Sign up" button
 
   # ── Top-level nav: hash anchors ─────────────────────────────────────
   Scenario Outline: Top-level nav anchors scroll to the right section

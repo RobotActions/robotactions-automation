@@ -38,3 +38,26 @@ Then('the device orientation is readable', async () => {
     }
     console.log(`[smoke] orientation ${orientation}`);
 });
+
+Then('the session reports a device platform', async () => {
+    // The grid may auto-distribute to any free node when DEVICE_UDID is unset,
+    // so assert the platform is one we know rather than a specific device.
+    const caps = driver.capabilities as Record<string, unknown>;
+    const platform = String(caps.platformName ?? '').toUpperCase();
+    if (!['ANDROID', 'IOS'].includes(platform)) {
+        throw new Error(`Session reports an unexpected platformName: ${platform || '(empty)'}`);
+    }
+    console.log(`[smoke] platform ${platform} on ${caps['appium:deviceName'] ?? 'unknown device'}`);
+});
+
+Then('the device still responds after a second command', async () => {
+    // A single successful command can be served from session creation state.
+    // Issuing another proves the session is genuinely alive on the device and
+    // that the proxy is still forwarding, rather than having gone stale.
+    const before = await driver.getWindowSize();
+    const source = await driver.getPageSource();
+    if (!(before.width > 0) || !source) {
+        throw new Error('Follow-up command returned nothing — session may be stale');
+    }
+    console.log('[smoke] session answered a second round-trip command');
+});
