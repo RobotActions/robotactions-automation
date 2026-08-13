@@ -50,10 +50,18 @@ function baseCapabilities(): Record<string, unknown> {
   return {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
-    'appium:deviceName': process.env.DEVICE_UDID || 'emulator-5554',
-    'appium:udid': process.env.DEVICE_UDID || 'emulator-5554',
-    'appium:appPackage': process.env.APP_PACKAGE || 'com.example.app',
-    'appium:appActivity': process.env.APP_ACTIVITY || '.MainActivity',
+    // Mirrors wdio.conf.ts: pin a device or an app only when asked. Defaulting
+    // these to placeholders requests hardware and packages that do not exist,
+    // which the grid rejects with "No nodes support the capabilities in the
+    // request". Omitting them lets it auto-distribute.
+    ...(process.env.DEVICE_UDID
+      ? {
+          'appium:deviceName': process.env.DEVICE_UDID,
+          'appium:udid': process.env.DEVICE_UDID,
+        }
+      : {}),
+    ...(process.env.APP_PACKAGE ? { 'appium:appPackage': process.env.APP_PACKAGE } : {}),
+    ...(process.env.APP_ACTIVITY ? { 'appium:appActivity': process.env.APP_ACTIVITY } : {}),
     'appium:noReset': true,
     'appium:autoGrantPermissions': true,
     'appium:newCommandTimeout': 120,
