@@ -66,7 +66,7 @@ All device and server settings are controlled via environment variables (set in 
 | `APP_ACTIVITY`  | `.MainActivity`      | Android launch activity                          |
 | `BUNDLE_ID`     | `com.example.app`    | iOS app bundle ID                                |
 | `APP_PATH`      | _(empty)_            | Path or URL to .apk/.ipa — auto-installs before tests |
-| `GRID_HOST`     | `localhost:4723`     | Appium server host:port or remote grid address   |
+| `GRID_HOST`     | `localhost:5555`     | Grid auth/capture proxy `host:port`. A standalone Appium server instead listens on `:4723`. |
 | `AUTH_TOKEN`    | _(empty)_            | Bearer token for authenticated grid endpoints    |
 
 ## Commands
@@ -89,7 +89,7 @@ PLATFORM=android
 DEVICE_UDID=emulator-5554
 APP_PACKAGE=com.mycompany.myapp
 APP_ACTIVITY=.ui.activities.SplashActivity
-GRID_HOST=localhost:4723
+GRID_HOST=localhost:5555
 ```
 
 ## iOS Setup
@@ -102,7 +102,7 @@ GRID_HOST=localhost:4723
 PLATFORM=ios
 DEVICE_UDID=00008101-001234567890001E
 BUNDLE_ID=com.mycompany.myapp
-GRID_HOST=localhost:4723
+GRID_HOST=localhost:5555
 ```
 
 ## Remote Grid (RemoteDeviceServer)
@@ -110,7 +110,7 @@ GRID_HOST=localhost:4723
 Point `GRID_HOST` at your grid and supply `AUTH_TOKEN`:
 
 ```env
-GRID_HOST=my-grid.example.com:4723
+GRID_HOST=my-grid.example.com:5555
 AUTH_TOKEN=<your-grid-token>
 ```
 

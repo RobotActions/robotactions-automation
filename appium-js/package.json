@@ -1,5 +1,5 @@
 {
-  "name": "robotactions-appium-js-template",
+  "name": "{{PROJECT_NAME}}",
   "version": "1.0.0",
   "description": "Mobile BDD test automation with WebdriverIO, Appium, and Cucumber",
   "scripts": {
