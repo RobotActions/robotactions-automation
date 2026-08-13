@@ -15,7 +15,7 @@
     "bddgen:export": "npx bddgen export"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "1.59.1",
     "@types/node": "^25.5.0",
     "allure-playwright": "^3.9.0",
     "dotenv": "^16.6.1",
@@ -25,6 +25,6 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
-    "playwright": "^1.58.2"
+    "playwright": "1.59.1"
   }
 }
