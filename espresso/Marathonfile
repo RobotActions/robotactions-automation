@@ -1,0 +1,19 @@
+name: "espresso native smoke"
+outputDir: "build/reports/marathon"
+screenRecordingPolicy: "ON_ANY"
+# Device selection: Marathon uses every adb-visible device by default.
+# The runner service restricts a job to the reserved device(s) by injecting:
+#   includeSerialRegexes: [ "^R38M601HGRH$", "^R3CN20C5BKF$" ]
+vendorConfiguration:
+  type: "Android"
+  applicationApk: "app/build/outputs/apk/debug/app-debug.apk"
+  testApplicationApk: "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+  autoGrantPermission: true
+  applicationPmClear: true
+  testApplicationPmClear: true
+  waitForDevicesTimeoutMillis: 60000
+  screenRecordConfiguration:
+    preferableRecorderType: "screenshot"
+  testParserConfiguration:
+    type: "local"
+uncompletedTestRetryQuota: 1
