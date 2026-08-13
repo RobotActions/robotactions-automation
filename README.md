@@ -4,6 +4,8 @@
   <img src="docs/assets/robot-actions-logo-light.svg" alt="Robot Actions" width="420">
 </picture>
 
+**Simplifying Automation and QA**
+
 # Automation Templates
 
 Ready-to-run test automation templates that execute against a **RobotActions grid** —
