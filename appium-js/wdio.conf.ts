@@ -6,16 +6,16 @@ const platform = (process.env.PLATFORM || 'android').toLowerCase();
 const androidCapability = {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
-    // Only pin a device when DEVICE_UDID is given. Defaulting these to a
-    // placeholder device asks the grid for hardware that does not exist, which
-    // it answers with "No nodes support the capabilities in the request".
-    // Omitting them lets the grid auto-distribute to any free Android node.
-    ...(process.env.DEVICE_UDID
-        ? {
-              'appium:deviceName': process.env.DEVICE_UDID,
-              'appium:udid': process.env.DEVICE_UDID,
-          }
-        : {}),
+    // Both deviceName and udid are optional for the grid: PLATFORM alone is
+    // enough and it auto-distributes to any free Android node. Pinning a
+    // device therefore sends udid ONLY.
+    //
+    // deviceName must not be set to the UDID. The grid matches it against the
+    // node's stereotype, which carries the model name (e.g. "SM-N986W"), so
+    // sending the UDID there can never match and the request is refused with
+    // "No nodes support the capabilities in the request" — even when the UDID
+    // itself is perfectly valid.
+    ...(process.env.DEVICE_UDID ? { 'appium:udid': process.env.DEVICE_UDID } : {}),
     // Only pin an app when provided — omitting it lets a session start without
     // launching one (device-level smoke), and avoids failing on a placeholder
     // package that is not installed.
@@ -34,12 +34,9 @@ const iosCapability = {
     'appium:automationName': 'XCUITest',
     // As with Android: pin a device only when asked, so the grid can
     // auto-distribute to any free iOS node otherwise.
-    ...(process.env.DEVICE_UDID
-        ? {
-              'appium:deviceName': process.env.DEVICE_UDID,
-              'appium:udid': process.env.DEVICE_UDID,
-          }
-        : {}),
+    // As with Android: udid only. deviceName is optional and matching it
+    // against the UDID never succeeds.
+    ...(process.env.DEVICE_UDID ? { 'appium:udid': process.env.DEVICE_UDID } : {}),
     // Only pin a bundleId when provided — omitting it lets a session start
     // without launching an app (device-level smoke), and avoids the
     // "App with bundle identifier 'com.example.app' unknown" failure.

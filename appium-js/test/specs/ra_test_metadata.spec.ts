@@ -40,9 +40,9 @@ function baseCapabilities(): Record<string, unknown> {
     return {
       platformName: 'iOS',
       'appium:automationName': 'XCUITest',
-      'appium:deviceName': process.env.DEVICE_UDID || 'iPhone Simulator',
-      'appium:udid': process.env.DEVICE_UDID || '',
-      'appium:bundleId': process.env.BUNDLE_ID || 'com.example.app',
+      // udid only, and only when pinning — see the Android branch below.
+      ...(process.env.DEVICE_UDID ? { 'appium:udid': process.env.DEVICE_UDID } : {}),
+      ...(process.env.BUNDLE_ID ? { 'appium:bundleId': process.env.BUNDLE_ID } : {}),
       'appium:noReset': true,
       'appium:newCommandTimeout': 120,
     };
@@ -50,10 +50,14 @@ function baseCapabilities(): Record<string, unknown> {
   return {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
-    'appium:deviceName': process.env.DEVICE_UDID || 'emulator-5554',
-    'appium:udid': process.env.DEVICE_UDID || 'emulator-5554',
-    'appium:appPackage': process.env.APP_PACKAGE || 'com.example.app',
-    'appium:appActivity': process.env.APP_ACTIVITY || '.MainActivity',
+    // Mirrors wdio.conf.ts. deviceName and udid are both optional: PLATFORM
+    // alone lets the grid auto-distribute. Pinning sends udid ONLY — deviceName
+    // is matched against the node stereotype's model name (e.g. "SM-N986W"), so
+    // setting it to the UDID can never match and the grid refuses the session
+    // even for a valid UDID.
+    ...(process.env.DEVICE_UDID ? { 'appium:udid': process.env.DEVICE_UDID } : {}),
+    ...(process.env.APP_PACKAGE ? { 'appium:appPackage': process.env.APP_PACKAGE } : {}),
+    ...(process.env.APP_ACTIVITY ? { 'appium:appActivity': process.env.APP_ACTIVITY } : {}),
     'appium:noReset': true,
     'appium:autoGrantPermissions': true,
     'appium:newCommandTimeout': 120,
