@@ -1,4 +1,10 @@
-# RobotActions Automation Templates
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/robot-actions-logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/robot-actions-logo-light.svg">
+  <img src="docs/assets/robot-actions-logo-light.svg" alt="Robot Actions" width="420">
+</picture>
+
+# Automation Templates
 
 Ready-to-run test automation templates that execute against a **RobotActions grid** —
 real Android and iOS devices plus elastic browser nodes behind a single WebDriver /
@@ -11,6 +17,17 @@ reporting, and a CI entry point that runs the same way on a laptop and in GitHub
 grid**](docs/connecting-to-the-grid.md) has the connection recipe for each framework,
 plus how to report pass/fail back to the dashboard and what the common failure modes
 actually mean.
+
+## Beyond the templates
+
+These templates are the hand-written path. The same grid also drives the rest of the
+RobotActions toolchain:
+
+| | |
+|---|---|
+| [**MCP server**](https://robotactions.com/#mcp) | Point Claude, Cursor, or any MCP host at real devices — install an app, drive its UI, read logs and network traffic, assert on what is actually on screen. |
+| [**Skills**](https://robotactions.com/skills) | Packaged expertise for coding agents: recording and replaying flows, mobile and web app testing, grid setup. |
+| [**AI test agent**](https://robotactions.com/#ai-test-agent) | Describe a scenario in plain language and have it explored, executed, and turned into a regression test on real hardware. |
 
 | Template | Stack | Runs against |
 |---|---|---|
@@ -39,10 +56,25 @@ is what the templates are for.
 
 | Variable | Meaning |
 |---|---|
-| `GRID_URL` / `GRID_HOST` | Your grid endpoint, `host:port`. Blank runs a **local** browser. |
+| `GRID_URL` / `GRID_HOST` | Your grid endpoint, `host:port`. Blank runs a **local** browser. Point this at the **auth/capture proxy** (`:5555` locally), not the Selenium hub — see below. |
 | `AUTH_TOKEN` | Grid bearer token. Rides the URL path (`/t/<token>/…`) for Selenium/Appium and `?token=` on Playwright's WS upgrade — the templates handle this for you. |
 | `BASE_URL` | The application under test. |
 | `RA_TESTSUITE` | Suite label the grid stores against the session, so runs are identifiable in the dashboard. |
+
+### Point at the proxy, not the hub
+
+A RobotActions grid exposes two ports, and only one of them is meant for tests:
+
+| Port | What it is |
+|---|---|
+| `5555` | **The auth/capture proxy — connect here.** Enforces the token, records commands, and rewrites the live-view / CDP URLs handed back to your client. |
+| `4444` | The raw Selenium hub. Internal. |
+
+Connecting to `4444` **does not fail** — sessions start and tests go green. You simply
+lose the auth gate, command capture, video, and live view, and the dashboard has no record
+of what ran. If a suite passes but the session is missing or blank in the dashboard, this
+is almost always why. (Earlier grid versions had these two ports the other way around; if
+you are carrying an old `.env`, check it.)
 
 ## CI
 
