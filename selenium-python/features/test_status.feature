@@ -7,7 +7,7 @@ Feature: Test Status Reporting (ra:setTestStatus)
   These scenarios exercise the four write paths shipped on PR #97:
     1. driver.execute_script('ra:setTestStatus', {status, reason, ...})  (magic)
     2. driver.execute_script('ra:job-result=failed:reason')               (legacy magic)
-    3. POST /api/sessions/:id/result on the grid proxy (port 4444)
+    3. POST /api/sessions/:id/result on the grid proxy (port 5555)
     4. POST /api/sessions/:id/result on the broadcaster   (port 3001)
 
   Each scenario navigates to a public site first (proves the session is real),
@@ -38,10 +38,10 @@ Feature: Test Status Reporting (ra:setTestStatus)
     And a synthetic ra:setTestStatus row should appear in the timeline
 
   @rest
-  Scenario: Mark session failed via REST API on grid proxy (port 4444)
+  Scenario: Mark session failed via REST API on grid proxy (port 5555)
     Given I open a chrome session through the grid
     When I navigate to "about:blank"
-    And I POST status "failed" with reason "REST via grid proxy" to "4444"
+    And I POST status "failed" with reason "REST via grid proxy" to "5555"
     Then the session should be marked "failed" with reason "REST via grid proxy"
     And a synthetic ra:setTestStatus row should appear in the timeline
 
@@ -57,7 +57,7 @@ Feature: Test Status Reporting (ra:setTestStatus)
   Scenario: Atomic multi-field update via REST API (status + testName + testSuite)
     Given I open a chrome session through the grid
     When I navigate to "about:blank"
-    And I POST a rich payload to "4444" with status "failed" testName "Checkout flow" testSuite "Smoke Regression" reason "Checkout button missing"
+    And I POST a rich payload to "5555" with status "failed" testName "Checkout flow" testSuite "Smoke Regression" reason "Checkout button missing"
     Then the session should be marked "failed" with reason "Checkout button missing"
     And the session test_name should be "Checkout flow"
     And the session test_suite should be "Smoke Regression"
