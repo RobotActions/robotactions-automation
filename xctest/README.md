@@ -77,5 +77,31 @@ curl -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/runs?platform=ios&devices=<ud
 curl "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/runs/<runId>"   # status + result (.xcresult on host)
 ```
 
+### Bundles over ~100 MB, or anything going through Cloudflare
+
+The single-request submit above is fine on a LAN. Through Cloudflare it is not: the free
+plan rejects a request body over 100 MB. Push the bundle in chunks, then start the run
+against the assembled result.
+
+```bash
+split -b 45m ~/ios-bundle.zip chunks/part.     # any size <= 50 MB
+N=$(ls chunks | wc -l)
+
+UP=$(curl -s -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads?name=ios-bundle.zip&chunks=$N" \
+     | jq -r .uploadId)
+
+i=0; for f in chunks/part.*; do
+  curl -s -X PUT "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads/$UP/$i" --data-binary @"$f" > /dev/null
+  i=$((i+1))
+done
+
+curl -s -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads/$UP/complete"
+curl -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/runs?platform=ios&devices=<udid>&bundleId=$UP"
+```
+
+Chunks are **raw bytes** — do not base64 them; the ~33% inflation turns a 50 MB chunk into
+a ~67 MB body. The per-chunk ceiling comes back as `chunkLimitBytes` when you begin the
+upload (50 MB by default); anything larger is refused with `413`.
+
 The runner runs `xcodebuild test-without-building -xctestrun <file> -destination id=<udid>`
 on the Mac holding that device, records pass/fail, then uninstalls the app + runner and releases.
