@@ -6,3 +6,7 @@ pytest-bdd>=8.1.0
 pytest-html>=4.1.0
 pytest-json-report>=1.5.0
 allure-pytest-bdd==2.16.0
+# Required by load.sh / run-*.sh: -n (parallel workers) and --count (repeats).
+# Without these the runners die with 'unrecognized arguments: -n --count'.
+pytest-xdist>=3.5.0
+pytest-repeat>=0.9.3
