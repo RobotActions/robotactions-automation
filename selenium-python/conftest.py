@@ -281,7 +281,7 @@ def browser(request, grid_url: str, auth_token: str) -> WebDriver:
 
 
 @pytest.fixture(scope="function")
-def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
+def driver(request, platform: str, grid_url: str, auth_token: str) -> WebDriver:
     """Platform-aware WebDriver — Chrome (web), UiAutomator2 (android), or
     XCUITest (ios). Selected by the PLATFORM env var. Uses the same /t/<token>
     auth pattern across all three.
@@ -302,7 +302,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
         drv = webdriver.Remote(command_executor=executor_url, options=options)
         drv.implicitly_wait(10)
         drv.maximize_window()
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         drv.quit()
         return
 
@@ -335,7 +337,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
         drv = appium_webdriver.Remote(command_executor=executor_url, options=options)
         # Explicit waits only — see the browser fixture for why implicit is 0.
         drv.implicitly_wait(0)
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         try:
             drv.quit()
         except Exception:
@@ -360,7 +364,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
 
         drv = appium_webdriver.Remote(command_executor=executor_url, options=options)
         drv.implicitly_wait(10)
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         drv.quit()
         return
 
@@ -385,7 +391,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
 
         drv = appium_webdriver.Remote(command_executor=executor_url, options=options)
         drv.implicitly_wait(10)
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         drv.quit()
         return
 
