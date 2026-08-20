@@ -178,7 +178,32 @@ class RobotActionsMobileWebPage(BasePage):
     # ── Mobile menu ───────────────────────────────────────────────────────
 
     def open_mobile_menu(self) -> None:
+        """Open the hamburger menu, not returning until a nav link is on screen.
+
+        The hamburger is the same Radix dropdown pattern as the theme and
+        language triggers, so it needs the same treatment `_open_dropdown`
+        already gives those: click, VERIFY, and fall back to the dispatched
+        pointer sequence when the click did nothing.
+
+        This used to be a bare click that returned immediately whether or not
+        the menu opened. Every menu-dependent scenario then failed in its NEXT
+        step with a bare TimeoutException naming a nav link — which reads as
+        "the site is missing a Pricing link" rather than "the menu never
+        opened". It accounted for essentially every mobile-web failure on both
+        iOS and Android.
+
+        The sentinel is a nav link rather than ANY_MENU_ITEM: the mobile nav
+        renders plain anchors, not role="menuitem" elements.
+        """
         self.click_any_visible(self.MENU_TRIGGER)
+        if self.is_mobile_menu_open():
+            return
+        # Click was swallowed (iOS Safari does this reliably; Android
+        # intermittently under parallel load). Synthesise the real finger.
+        self.execute_script(
+            POINTER_TAP_JS, self.any_visible(self.MENU_TRIGGER, self.short_wait)
+        )
+        self.is_mobile_menu_open()
 
     def is_mobile_menu_open(self) -> bool:
         return self.is_any_visible(self.menu_link("Home"), self.short_wait)

@@ -1,4 +1,7 @@
+import base64
+import json
 import os
+import time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -77,6 +80,75 @@ def _apply_ra_testsuite(options) -> None:
         options.set_capability("ra:testsuite", suite)
 
 
+# ─── Result reporting ────────────────────────────────────────────────────────
+# The grid cannot infer a verdict: at the WebDriver layer a passing suite and a
+# failing one are the same command stream. Unless the test SAYS so, the session
+# lands with result=NULL and the dashboard can only show "COMPLETED" — which is
+# how a suite that silently stopped asserting still looks healthy.
+#
+# This lived only in tests/test_robotactions_mobileweb_sanity.py, which builds
+# its own driver. Everything under tests/step_defs/ — i.e. everything load.sh
+# and run-*.sh actually run — used the shared fixtures below and reported
+# nothing. Hoisted here so every scenario reports by default.
+#
+# Outcome comes from `rep_<phase>` attributes set by the existing
+# pytest_runtest_makereport hook above; a fixture finalizer cannot otherwise
+# see whether its test passed.
+
+
+def _ra_report_result(driver, item) -> None:
+    """Tell the grid how the test ended, via the ra:job-result magic script.
+
+    Best-effort by design: a reporting failure must never turn a passing test
+    red, and the driver may already be dead if the session crashed.
+    """
+    if driver is None or item is None:
+        return
+    # `rep_<phase>` is set by the module's existing
+    # pytest_runtest_makereport hook (the one that also attaches Allure
+    # screenshots). Reused rather than adding a second hook — a duplicate
+    # definition would shadow it and silently drop those attachments.
+    setup = getattr(item, "rep_setup", None)
+    call = getattr(item, "rep_call", None)
+    failed = (setup is not None and setup.failed) or (call is not None and call.failed)
+
+    try:
+        if failed:
+            rep = call if (call is not None and call.failed) else setup
+            reason = ""
+            if rep is not None and rep.longrepr is not None:
+                # Prefer pytest's own crash message — it is the assertion or
+                # exception line, already distilled. Taking the last line of
+                # longreprtext instead yields garbage whenever the failure
+                # carries a native stack ("#20 0xffffa9362de8 <unknown>" from a
+                # browser crash), which is exactly when a readable reason
+                # matters most.
+                crash = getattr(rep.longrepr, "reprcrash", None)
+                if crash is not None and getattr(crash, "message", None):
+                    reason = str(crash.message).strip().split("\n")[0][:180]
+                else:
+                    reason = str(rep.longreprtext).strip().split("\n")[-1][:180]
+            driver.execute_script(f"ra:job-result=failed:{reason}" if reason else "ra:job-result=failed")
+        else:
+            driver.execute_script("ra:job-result=passed")
+    except Exception:
+        pass
+
+
+def _ra_tag_test(driver, item) -> None:
+    """Name the session after the test so dashboard rows are identifiable.
+
+    Without this every row reads as an anonymous session and the Reports tab
+    cannot group anything.
+    """
+    if driver is None or item is None:
+        return
+    try:
+        driver.execute_script(f"ra:job-name={item.name[:180]}")
+    except Exception:
+        pass
+
+
 @pytest.fixture(scope="session")
 def grid_url() -> str:
     """Selenium / Appium Grid URL — built from GRID_HOST or GRID_URL env var."""
@@ -88,8 +160,43 @@ def grid_url() -> str:
 
 @pytest.fixture(scope="session")
 def auth_token() -> str:
-    """Auth token for Grid proxy."""
-    return os.environ.get("AUTH_TOKEN", "{{AUTH_TOKEN}}")
+    """Auth token for Grid proxy.
+
+    Fails fast on an expired token. Without this check an expired token
+    produces `WebDriverException: Authorization Required` on EVERY test — dozens
+    of red results whose message says nothing about the actual cause. That
+    happened here: a token that expired days earlier wiped a full run and looked
+    like a grid outage.
+
+    Decode-only, no signature check — this is a usability guard, not auth. The
+    grid still verifies the token properly; we are only reading `exp` so the
+    failure names itself.
+    """
+    token = os.environ.get("AUTH_TOKEN", "{{AUTH_TOKEN}}")
+    _assert_token_not_expired(token)
+    return token
+
+
+def _assert_token_not_expired(token: str) -> None:
+    """Raise with a readable message if the JWT's `exp` is in the past."""
+    if not token or token.startswith("{{"):
+        return  # unset / placeholder — the no-grid local path handles this
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        claims = json.loads(base64.urlsafe_b64decode(payload))
+    except Exception:
+        return  # opaque or non-JWT token — nothing to check, let the grid decide
+    exp = claims.get("exp")
+    if not isinstance(exp, (int, float)):
+        return
+    if exp < time.time():
+        when = time.strftime("%Y-%m-%d %H:%M", time.localtime(exp))
+        raise pytest.UsageError(
+            f"AUTH_TOKEN expired on {when} (user: {claims.get('email', 'unknown')}).\n"
+            "Every test would fail with 'Authorization Required'. "
+            "Generate a new token from the RobotActions dashboard and update .env."
+        )
 
 
 @pytest.fixture(scope="session")
@@ -115,7 +222,7 @@ def _executor_url(grid_url: str, auth_token: str) -> str:
 
 
 @pytest.fixture(scope="function")
-def browser(grid_url: str, auth_token: str) -> WebDriver:
+def browser(request, grid_url: str, auth_token: str) -> WebDriver:
     """Remote Chrome WebDriver via Selenium Grid (browser-only).
 
     Use this fixture in browser scenarios. For platform-aware steps that
@@ -162,7 +269,11 @@ def browser(grid_url: str, auth_token: str) -> WebDriver:
     # Implicit + explicit together can cause double-timeout; keeping at 0 avoids that.
     driver.implicitly_wait(0)
 
+    _ra_tag_test(driver, request.node)
+
     yield driver
+
+    _ra_report_result(driver, request.node)
     try:
         driver.quit()
     except Exception:
@@ -170,7 +281,7 @@ def browser(grid_url: str, auth_token: str) -> WebDriver:
 
 
 @pytest.fixture(scope="function")
-def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
+def driver(request, platform: str, grid_url: str, auth_token: str) -> WebDriver:
     """Platform-aware WebDriver — Chrome (web), UiAutomator2 (android), or
     XCUITest (ios). Selected by the PLATFORM env var. Uses the same /t/<token>
     auth pattern across all three.
@@ -191,7 +302,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
         drv = webdriver.Remote(command_executor=executor_url, options=options)
         drv.implicitly_wait(10)
         drv.maximize_window()
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         drv.quit()
         return
 
@@ -224,7 +337,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
         drv = appium_webdriver.Remote(command_executor=executor_url, options=options)
         # Explicit waits only — see the browser fixture for why implicit is 0.
         drv.implicitly_wait(0)
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         try:
             drv.quit()
         except Exception:
@@ -249,7 +364,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
 
         drv = appium_webdriver.Remote(command_executor=executor_url, options=options)
         drv.implicitly_wait(10)
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         drv.quit()
         return
 
@@ -274,7 +391,9 @@ def driver(platform: str, grid_url: str, auth_token: str) -> WebDriver:
 
         drv = appium_webdriver.Remote(command_executor=executor_url, options=options)
         drv.implicitly_wait(10)
+        _ra_tag_test(drv, request.node)
         yield drv
+        _ra_report_result(drv, request.node)
         drv.quit()
         return
 
