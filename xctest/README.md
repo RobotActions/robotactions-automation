@@ -83,20 +83,29 @@ The single-request submit above is fine on a LAN. Through Cloudflare it is not: 
 plan rejects a request body over 100 MB. Push the bundle in chunks, then start the run
 against the assembled result.
 
+Send the token as a **header** for this flow, not as a `/t/<token>` path prefix. Both
+work, but a grid JWT is ~500 characters: the path form turns a 57-character upload URL
+into 561, a chunked upload makes one request per chunk, and the token ends up in every
+access-log line. The header costs the same on the wire and keeps the credential out of
+the URL.
+
 ```bash
-split -b 45m ~/ios-bundle.zip chunks/part.     # any size <= 50 MB
+AUTH="Authorization: Bearer {{AUTH_TOKEN}}"
+
+split -b 45m ~/ios-bundle.zip chunks/part.          # any size <= 50 MB
 N=$(ls chunks | wc -l)
 
-UP=$(curl -s -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads?name=ios-bundle.zip&chunks=$N" \
+UP=$(curl -s -X POST "{{GRID_URL}}/native/uploads?name=ios-bundle.zip&chunks=$N" -H "$AUTH" \
      | jq -r .uploadId)
 
 i=0; for f in chunks/part.*; do
-  curl -s -X PUT "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads/$UP/$i" --data-binary @"$f" > /dev/null
+  curl -s -X PUT "{{GRID_URL}}/native/uploads/$UP/$i" -H "$AUTH" --data-binary @"$f" > /dev/null
   i=$((i+1))
 done
 
-curl -s -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/uploads/$UP/complete"
-curl -X POST "{{GRID_URL}}/t/{{AUTH_TOKEN}}/native/runs?platform=ios&devices=<udid>&bundleId=$UP"
+curl -s -X POST "{{GRID_URL}}/native/uploads/$UP/complete" -H "$AUTH"
+
+curl -X POST "{{GRID_URL}}/native/runs?platform=ios&devices=<udid>&bundleId=$UP" -H "$AUTH"
 ```
 
 Chunks are **raw bytes** — do not base64 them; the ~33% inflation turns a 50 MB chunk into
