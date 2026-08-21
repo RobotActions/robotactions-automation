@@ -153,13 +153,111 @@ class RobotActionsMobileWebPage(BasePage):
     def __init__(self, driver: WebDriver) -> None:
         super().__init__(driver, HOME_URL)
 
+    # ── Consent bar ───────────────────────────────────────────────────────
+
+    # The analytics consent bar is `fixed bottom-0` and, on a phone, roughly a
+    # THIRD of the viewport (measured 285px of 896px — the buttons stack below
+    # `sm`). Anything scrolled into that band is covered, so taps meant for the
+    # page land on the bar instead:
+    #
+    #   AccordionTrigger is not clickable at point (205, 582).
+    #   Other element would receive the click:
+    #     <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+    #
+    # The site now reserves the bar's height as body padding, so nothing is
+    # permanently unreachable — but that fixes the SCROLL EXTENT, not the
+    # overlay, and a test that scrolls a target into the lower third still
+    # cannot tap it.
+    #
+    # Answering the bar is what a real visitor does before using the page, so
+    # tests do the same. It also makes them deterministic: otherwise every
+    # assertion below depends on where the bar happens to sit.
+    CONSENT_ACCEPT: Locator = (
+        By.XPATH,
+        '//*[@role="region"]//button[normalize-space()="Accept"'
+        ' or normalize-space()="Decline"]',
+    )
+
+    # The chatbot greeting bubble — a SECOND fixed overlay, bottom-right, that
+    # appears on a TIMER rather than at load. That delay is what made the FAQ
+    # failures intermittent: sometimes it arrived before the tap, sometimes
+    # after. Its dismiss control is icon-only, so it is addressed by aria-label.
+    CHAT_GREETING_DISMISS: Locator = (
+        By.XPATH,
+        '//div[contains(@class,"fixed") and contains(@class,"bottom-[90px]")]'
+        '//button[@aria-label]',
+    )
+
+    def _dismiss(self, locator: Locator, wait) -> None:
+        """Click a dismiss control and CONFIRM the overlay went away.
+
+        Uses the same click -> verify -> dispatched-pointer fallback as
+        `_open_dropdown`, for the same reason: on iOS Safari a plain WebDriver
+        click on these controls can do nothing at all.
+
+        The first version of this helper clicked and moved on. Android went
+        green; iOS stayed at 13/22 because the greeting bubble was never
+        actually dismissed and carried on intercepting taps. Verifying rather
+        than assuming is the whole point — a dismissal that silently no-ops is
+        indistinguishable from no dismissal.
+
+        Best-effort throughout: an overlay that will not close must never fail
+        a test, since the overlay is not the thing under test.
+        """
+        try:
+            if not self.is_any_visible(locator, wait):
+                return
+            self.click_any_visible(locator)
+            if not self.is_any_visible(locator, self.short_wait):
+                return                      # gone — plain click was enough
+            self.execute_script(
+                POINTER_TAP_JS, self.any_visible(locator, self.short_wait)
+            )
+        except Exception:
+            pass
+
+    def dismiss_overlays(self) -> None:
+        """Clear both floating overlays before interacting with the page.
+
+        Two independent things cover content on a phone: the consent bar along
+        the bottom (roughly a third of the viewport), and the chatbot greeting
+        bubble above it, which arrives on a TIMER rather than at load — that
+        delay is what made the failures look like flakiness rather than a
+        second overlay.
+        """
+        self.dismiss_consent()
+        self._dismiss(self.CHAT_GREETING_DISMISS, self.short_wait)
+
+    def dismiss_consent(self) -> None:
+        """Answer the consent bar if it is showing. No-op when it is not.
+
+        Probes with `short_wait`. An earlier version used `long_wait` on the
+        theory that a fresh session always shows the bar, so the wait would
+        cost nothing. That theory only held for desktop Chrome, which gets a
+        clean profile per session. A physical iPhone does NOT: Safari keeps
+        the stored consent choice between sessions, so once the bar has been
+        answered on that handset it never renders again and every scenario
+        paid the full 15s for an element that would never arrive. Stacked
+        across the suite that was the whole iOS-vs-Android runtime gap (356s
+        vs 198s), and the accumulated delay is what pushed borderline steps
+        past their own waits and made the run look flaky.
+
+        5s is measured, not guessed: on a fresh profile the bar renders in
+        1.0-1.8s (Zaraz loads from the edge), so this keeps ~3x headroom for
+        a slow handset while costing 5s rather than 15s when the bar is
+        already dismissed.
+        """
+        self._dismiss(self.CONSENT_ACCEPT, self.short_wait)
+
     # ── Navigation ────────────────────────────────────────────────────────
 
     def open_home_page(self) -> None:
         self.driver.get(HOME_URL)
+        self.dismiss_overlays()
 
     def open_path(self, path: str) -> None:
         self.open(path)
+        self.dismiss_overlays()
 
     def await_title_contains(self, fragment: str) -> bool:
         """Wait for the document title to contain ``fragment``.
