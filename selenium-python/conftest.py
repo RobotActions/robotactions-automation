@@ -331,6 +331,27 @@ def driver(request, platform: str, grid_url: str, auth_token: str) -> WebDriver:
         options.set_capability(
             "appium:automationName", "XCUITest" if is_ios else "UiAutomator2")
         options.set_capability("appium:browserName", "safari" if is_ios else "chrome")
+        if is_ios:
+            # Phones only. The iOS fleet holds an iPad alongside the iPhones,
+            # and `platformName: iOS` alone matches BOTH — so roughly one
+            # session in three landed on the iPad, where the site renders its
+            # DESKTOP header and the hamburger is display:none. Every
+            # menu-dependent test then failed on a hamburger that does not
+            # exist, which read as iOS flakiness for weeks. It was never
+            # flakiness and never the grid: the grid matched exactly what was
+            # asked of it.
+            #
+            # deviceClass is the right lever because the iOS stereotypes
+            # advertise it ("iPhone" / "iPad"), so Grid's slot matcher
+            # ENFORCES it -- unlike appium:browserName above, which no
+            # stereotype advertises and the matcher therefore ignores. That
+            # asymmetry is the whole reason one filters and the other does not.
+            # Verified: 3/3 sessions landed at a 414px viewport with the
+            # hamburger visible.
+            #
+            # This is a class filter, not a udid pin, so tests still spread
+            # across every iPhone in the fleet.
+            options.set_capability("appium:deviceClass", "iPhone")
         options.set_capability("appium:newCommandTimeout", 180)
         _apply_ra_testsuite(options)
 
