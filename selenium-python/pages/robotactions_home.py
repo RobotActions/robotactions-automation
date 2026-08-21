@@ -262,7 +262,39 @@ class RobotActionsHomePage(BasePage):
         """Click a visible dropdown link matching label by partial text."""
         self.click(self.link_containing(label))
 
-    # ── Theme toggle ──────────────────────────────────────────────────────
+    # ── Theme control ─────────────────────────────────────────────────────
+    #
+    # NOT a two-state toggle. It is a Radix dropdown whose trigger opens a menu
+    # of Light / Dark / System; the theme changes only when an ITEM is picked.
+    #
+    # The desktop scenarios used to click the trigger and assert the theme had
+    # flipped, which could never pass: the first click merely opened the menu.
+    # The "double toggle" variant then failed differently again — the second
+    # click on the trigger was intercepted by the menu the first click had
+    # opened.
+
+    THEME_TRIGGER: Locator = (
+        By.XPATH, '//button[normalize-space()="Toggle theme"]'
+    )
+
+    @staticmethod
+    def theme_option(label: str) -> Locator:
+        """A Light / Dark / System item inside the open theme menu."""
+        return (
+            By.XPATH,
+            f'//*[@role="menuitem" or @role="option"][normalize-space()="{label}"]',
+        )
+
+    def select_theme(self, choice: str) -> None:
+        """Open the theme menu and pick `choice` (Light / Dark / System).
+
+        The trigger appears twice in the DOM — a desktop copy and a mobile one,
+        with only one displayed at a given width — so this relies on the click
+        helper resolving a VISIBLE match rather than the first in document
+        order.
+        """
+        self.click(self.THEME_TRIGGER)
+        self.click(self.theme_option(choice), self.short_wait)
 
     def current_theme(self) -> str:
         """Return 'dark' if <html> has the 'dark' class, else 'light'."""

@@ -283,6 +283,16 @@ def capture_initial_theme(
     _theme_state["value"] = _page(browser).current_theme()
 
 
+@when(parsers.parse('I select the "{choice}" theme'))
+def select_theme(browser: WebDriver, choice: str) -> None:
+    """Pick Light / Dark / System from the theme menu.
+
+    The control is a dropdown, not a toggle — clicking the trigger alone only
+    opens the menu and leaves the theme untouched.
+    """
+    _page(browser).select_theme(choice)
+
+
 @when(parsers.parse("I wait {ms:d} milliseconds for the theme transition"))
 def wait_theme_transition(browser: WebDriver, ms: int) -> None:
     """Pause for the CSS theme transition via JS setTimeout (no time.sleep)."""
