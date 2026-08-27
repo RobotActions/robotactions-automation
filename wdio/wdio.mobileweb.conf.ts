@@ -46,6 +46,10 @@ export const config: WebdriverIO.Config = {
         // ra:* caps — intercepted + stripped by the proxy before forwarding to Appium.
         'ra:testsuite': suiteName(),
         'ra:autoFailDetect': false,
+        // Records every request Chrome makes into the session's Network tab —
+        // URL, method, status, headers, timing, and the response body. Opt-in
+        // because it costs disk; see docs/connecting-to-the-grid.md.
+        'ra:networkCapture': true,
     } as WebdriverIO.Capabilities],
 
     // Grid connection — scheme, host, port and auth resolved in ./config.ts.

@@ -143,6 +143,46 @@ without you writing any of it.
 
 ---
 
+## Recording the network waterfall
+
+Add `ra:networkCapture: true` to your capabilities and the session's **Network** tab
+fills with the same request/response waterfall you would get from DevTools — URL, method,
+status, request and response headers, transfer size, timing, resource type, failures, and
+the response body.
+
+```js
+capabilities: {
+  platformName: 'Android',
+  'appium:automationName': 'UiAutomator2',
+  'appium:browserName': 'chrome',
+  'ra:networkCapture': true,     // <- the whole opt-in
+}
+```
+
+It works the same way on a real Android handset, a real iOS handset, and a grid browser.
+Two things to know:
+
+**It is off by default, and that is deliberate.** Capture costs disk — a two-minute
+mobile-web suite recorded 658 requests and about 130 MB of response bodies. Turn it on for
+the runs where you want the evidence, not for every run.
+
+**It applies to web contexts** — a mobile browser or a webview. A purely native session
+has no network protocol to listen to, so the tab stays empty there.
+
+Response bodies are stored whole, with no truncation on our side. The practical ceiling is
+the browser's own inspector buffer:
+
+| Session | Bodies captured |
+|---|---|
+| Grid browsers (Chrome, Firefox) | full |
+| Android device (Chrome / webview) | full — verified byte-exact at 24 MB |
+| iOS device (Safari / webview) | verified byte-exact at 15 MB; WebKit drops larger payloads and offers no way to raise it |
+
+Requests that show no body are the ones that never had one — `204 No Content`, redirects,
+and anything still in flight when the session ended.
+
+---
+
 ## Which approach fits
 
 | You have | Use |
