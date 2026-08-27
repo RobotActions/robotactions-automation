@@ -163,8 +163,18 @@ When('I click the {string} dropdown item', async ({ page }, label: string) => {
   await page.getByRole('link', { name: label, exact: false }).first().click();
 });
 
+// Every one of these routes answers 308 -> the same path WITH a trailing
+// slash, so the pathname is `/careers` for one moment and `/careers/` the
+// next. waitForURL resolves the instant its predicate matches, so a strict
+// `=== path` was racing the redirect: it passed when Playwright happened to
+// sample before the 308 landed and failed when it sampled after. Three of the
+// six Resources rows failed per run, and not the same three.
+//
+// Normalise both sides so the assertion means "this route", not "this route
+// caught at the right millisecond".
 Then('the URL pathname should be {string}', async ({ page }, path: string) => {
-  await page.waitForURL((url) => new URL(url).pathname === path, { timeout: 8_000 });
+  const norm = (p: string) => p.replace(/\/+$/, '') || '/';
+  await page.waitForURL((url) => norm(new URL(url).pathname) === norm(path), { timeout: 8_000 });
 });
 
 Then('the SPA should hydrate without console errors', async ({ page, consoleErrors }) => {
