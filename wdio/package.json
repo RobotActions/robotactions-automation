@@ -14,7 +14,8 @@
     "test:mobile:android:smoke": "wdio run wdio.mobileweb.conf.ts --cucumberOpts.tagExpression='@smoke'",
     "test:mobile:ios": "wdio run wdio.ios-mobileweb.conf.ts",
     "test:mobile:ios:smoke": "wdio run wdio.ios-mobileweb.conf.ts --cucumberOpts.tagExpression='@smoke'",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "allure:generate": "allure generate allure-results --clean -o allure-report"
   },
   "devDependencies": {
     "@wdio/cli": "^9.24.0",

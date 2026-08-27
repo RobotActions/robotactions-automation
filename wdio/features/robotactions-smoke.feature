@@ -14,12 +14,24 @@ Feature: robotactions.com smoke — homepage + nav + key surfaces
   # a template stub.
 
   Scenario: Hero section renders headline + primary CTAs
-    # H1 rotates between 3 phrases (~20 s cycle) — assert one of the known
-    # set rather than a single brittle string.
+    # H1 headline copy is an Embla carousel with 5 defined slides, but no
+    # autoplay plugin is wired up (verified in the built JS bundle) — six
+    # separate fresh page loads all landed on the same slide, so this is not
+    # actually rotating on a timer the way the old comment claimed. Assert
+    # one of the known slide phrases rather than a single brittle string,
+    # to stay resilient if the active slide ever does change.
+    #
+    # Each phrase is a lead-only or tail-only substring: the lead/tail spans
+    # for a slide render with NO whitespace between them (e.g. slide 2 is
+    # literally "Real devices,zero lag." with no space), so a fragment that
+    # spans that boundary never matches even when the slide is genuinely on
+    # screen. "Real Android & iOS devices" was dropped — verified against
+    # the live JS bundle that copy is a showcase-tab / compare-table label,
+    # not hero H1 copy, so it can never legitimately match here.
     Then the hero heading should be one of:
-      | Real devices                        |
-      | Real Android & iOS devices          |
-      | Talk to your device                 |
+      | From user story    |
+      | Real devices,       |
+      | Talk to your device |
     # Verified via Playwright MCP at 360×740 + 768×1024 viewports — these
     # two CTAs render at every screen size that ships in our device fleet.
     # "See how it works" used to be on this list but collapses below the
