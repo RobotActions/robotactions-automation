@@ -56,6 +56,59 @@ export class RobotActionsHomePage extends BasePage {
 
     async open(path: string = '/'): Promise<void> {
         await super.open(path);
+        await this.dismissOverlays();
+    }
+
+    /**
+     * Answer the two fixed overlays the marketing site shows a first-time
+     * visitor, because both intercept clicks meant for the page.
+     *
+     * The analytics consent bar is `fixed bottom-0`, so anything in the lower
+     * band of the viewport is covered. That is what made the LAST item of a
+     * dropdown fail while the items above it passed:
+     *
+     *   <div role="region" aria-label="Analytics cookies"> subtree
+     *     intercepts pointer events
+     *
+     * The chat greeting bubble is a second fixed overlay, bottom-right, and it
+     * arrives on a TIMER rather than at load — so whether it intercepts a click
+     * depends on how long the preceding steps took. That timing is what turns
+     * this into a flaky failure rather than a consistent one.
+     *
+     * Answering both is also what a real visitor does before using the page.
+     * Mirrors `dismiss_overlays()` in the selenium-python template.
+     */
+    async dismissOverlays(): Promise<void> {
+        // Decline rather than Accept: a test run should not opt itself into
+        // analytics, and the bar goes away either way.
+        await this.dismissIfPresent(
+            this.page.getByRole('region', { name: 'Analytics cookies' }).getByRole('button', { name: 'Decline' }),
+        );
+        await this.dismissIfPresent(this.page.getByRole('button', { name: 'Dismiss' }).first());
+    }
+
+    /**
+     * Dismiss a control if it shows up, and no-op if it never does.
+     *
+     * The absent case is NORMAL and must stay cheap: the browser profile may
+     * already carry a stored consent choice, in which case the bar never
+     * renders and waiting the full default timeout for it would tax every
+     * scenario. 5s is measured headroom — the bar renders in 1.0-1.8s on a
+     * fresh profile.
+     *
+     * "Never appeared" is swallowed; "appeared but would not dismiss" is NOT.
+     * The second is a real regression in the overlay, and silently continuing
+     * would hand the next step an interception failure that looks like a bug
+     * in whatever it was trying to click.
+     */
+    private async dismissIfPresent(control: Locator, timeout = 5000): Promise<void> {
+        try {
+            await control.waitFor({ state: 'visible', timeout });
+        } catch {
+            return;
+        }
+        await control.click();
+        await expect(control).toBeHidden({ timeout: 5000 });
     }
 
     async waitForHydration(): Promise<void> {

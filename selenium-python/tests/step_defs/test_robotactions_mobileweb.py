@@ -23,6 +23,34 @@ from pages.robotactions_mobileweb import HERO_TAGLINE, RobotActionsMobileWebPage
 scenarios("robotactions-mobileweb.feature")
 
 
+@pytest.fixture(autouse=True)
+def _require_mobile_web_platform(platform: str) -> None:
+    """Skip this feature unless the run is actually on a handset browser.
+
+    These scenarios assert phone-only behaviour — the hamburger, the collapsed
+    nav, small-viewport layout. On PLATFORM=web conftest launches desktop
+    Chrome at --window-size=1920,1080, where the nav is permanently visible and
+    no hamburger exists, so "the mobile menu should be closed" fails on the
+    FIRST step of the scenario. That is the suite reporting the wrong platform,
+    not a defect in the site.
+
+    Worse than the failure is what passed: the scenarios that do not touch the
+    hamburger went green on a 1920px desktop window, which means they asserted
+    nothing mobile while counting as mobile coverage.
+
+    Requested BEFORE `page`, and depending only on `platform`, so a skipped
+    scenario never builds a grid session it will not use.
+
+    To run them for real: PLATFORM=mobileweb (Android Chrome) or
+    PLATFORM=ios-mobileweb (iOS Safari), with a device free on the grid.
+    """
+    if platform not in ("mobileweb", "ios-mobileweb"):
+        pytest.skip(
+            f"mobile-web scenarios require PLATFORM=mobileweb or ios-mobileweb (got {platform!r}); "
+            "a desktop window cannot exercise the hamburger nav"
+        )
+
+
 @pytest.fixture()
 def page(driver: WebDriver) -> RobotActionsMobileWebPage:
     """Mobile page object bound to the platform-aware driver."""
