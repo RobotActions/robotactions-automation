@@ -214,7 +214,7 @@ def test_hero_section(mobile_web):
 def test_pricing_tiers(mobile_web):
     _open_home(mobile_web)
     pricing = WebDriverWait(mobile_web, 15).until(
-        EC.presence_of_element_located((By.XPATH, \'//*[@id="pricing"]\'))
+        EC.presence_of_element_located((By.XPATH, '//*[@id="pricing"]'))
     )
     _scroll_to(mobile_web, pricing)
     text = pricing.text
@@ -226,7 +226,7 @@ def test_pricing_tiers(mobile_web):
                   test_name="FAQ section renders a known accordion question")
 def test_faq_section(mobile_web):
     _open_home(mobile_web)
-    faq = WebDriverWait(mobile_web, 15).until(EC.presence_of_element_located((By.XPATH, \'//*[@id="faq"]\')))
+    faq = WebDriverWait(mobile_web, 15).until(EC.presence_of_element_located((By.XPATH, '//*[@id="faq"]')))
     _scroll_to(mobile_web, faq)
     assert "RobotActions" in faq.text, "FAQ section missing expected content"
 
@@ -239,7 +239,7 @@ def test_services_section(mobile_web):
     # not a frameworks list. Assert its stable device-testing copy.
     _open_home(mobile_web)
     services = WebDriverWait(mobile_web, 15).until(
-        EC.presence_of_element_located((By.XPATH, \'//*[@id="services"]\'))
+        EC.presence_of_element_located((By.XPATH, '//*[@id="services"]'))
     )
     _scroll_to(mobile_web, services)
     text = services.text
@@ -254,7 +254,7 @@ def test_services_section(mobile_web):
 def test_contact_section(mobile_web):
     _open_home(mobile_web)
     contact = WebDriverWait(mobile_web, 15).until(
-        EC.presence_of_element_located((By.XPATH, \'//*[@id="contact"]\'))
+        EC.presence_of_element_located((By.XPATH, '//*[@id="contact"]'))
     )
     assert contact is not None, "#contact section not found"
 
