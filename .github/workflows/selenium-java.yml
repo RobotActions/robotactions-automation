@@ -1,0 +1,134 @@
+name: selenium-java
+
+# Manual dispatch only, for now. No push/PR trigger: every run consumes real
+# devices and grid capacity, so it stays opt-in until we decide what should run
+# automatically.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'PLATFORM — picks the driver'
+        type: choice
+        required: true
+        default: mobileweb
+        options:
+          - mobileweb       # Chrome on a real Android device
+          - ios-mobileweb   # Safari on a real iOS device
+          - web             # Desktop Chrome via the grid
+      tags:
+        description: 'Cucumber tag expression'
+        type: string
+        required: true
+        default: '@mobileweb and @smoke'
+      grid_url:
+        description: 'Grid endpoint'
+        type: string
+        required: true
+        default: 'https://enterprise-grid.robotactions.com'
+
+# One run at a time — concurrent runs compete for the same handsets.
+concurrency:
+  group: selenium-java-${{ inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Session creation on a real handset can take minutes; MOBILE_READ_TIMEOUT
+    # alone is 300s per scenario, so keep the job ceiling well clear of it.
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: selenium-java
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      # Dispatch inputs are never interpolated directly into a run: block —
+      # `${{ inputs.tags }}` inside a shell command is a command-injection shape
+      # (the value is pasted in before the shell parses it). They go through
+      # env: and are referenced as quoted variables instead.
+      - name: Show run configuration
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          TAGS: ${{ inputs.tags }}
+          GRID_URL: ${{ inputs.grid_url }}
+        run: |
+          echo "platform : $PLATFORM"
+          echo "tags     : $TAGS"
+          echo "grid     : $GRID_URL"
+
+      - name: Fail fast if the auth token is missing
+        env:
+          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
+        run: |
+          if [ -z "$AUTH_TOKEN" ]; then
+            echo "::error::secrets.RA_AUTH_TOKEN is not set — every newSession would 401." >&2
+            exit 1
+          fi
+
+      - name: Run Cucumber suite
+        env:
+          PLATFORM: ${{ inputs.platform }}
+          GRID_URL: ${{ inputs.grid_url }}
+          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
+          RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.platform }} · run ${{ github.run_number }}
+          TAGS: ${{ inputs.tags }}
+        run: mvn -B test -Dtest=RunCucumberTest -Dcucumber.filter.tags="$TAGS"
+
+      # A tag or name filter that matches nothing makes Cucumber run 0 scenarios
+      # and Maven still exit 0 — a green build that tested nothing. Treat an
+      # empty result as a failure so a filter typo can never look like a pass.
+      - name: Guard against a zero-scenario run
+        if: always()
+        env:
+          TAGS: ${{ inputs.tags }}
+        run: |
+          report=reports/cucumber.json
+          if [ ! -s "$report" ]; then
+            echo "::error::$report is missing or empty — no scenario produced a result." >&2
+            exit 1
+          fi
+          scenarios=$(jq '[.[].elements[]? | select(.type == "scenario")] | length' "$report")
+          echo "scenarios executed: $scenarios"
+          if [ "$scenarios" -eq 0 ]; then
+            echo "::error::0 scenarios matched '$TAGS' — nothing ran." >&2
+            exit 1
+          fi
+
+      - name: Summarise results
+        if: always()
+        env:
+          PLATFORM: ${{ inputs.platform }}
+        run: |
+          report=reports/cucumber.json
+          [ -s "$report" ] || exit 0
+          {
+            echo "### selenium-java · $PLATFORM"
+            echo ""
+            echo "| Scenario | Result |"
+            echo "| --- | --- |"
+            jq -r '
+              [.[].elements[]? | select(.type == "scenario")]
+              | .[]
+              | . as $s
+              | ([$s.steps[]?.result.status] | if any(. == "failed") then "failed"
+                 elif any(. == "undefined") then "undefined" else "passed" end) as $st
+              | "| \($s.name) | \(if $st == "passed" then ":white_check_mark:" else ":x:" end) \($st) |"
+            ' "$report"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cucumber-${{ inputs.platform }}-${{ github.run_number }}
+          path: |
+            selenium-java/reports/
+            selenium-java/target/surefire-reports/
+          retention-days: 14
