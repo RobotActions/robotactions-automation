@@ -12,9 +12,19 @@ Feature: RobotActions homepage — full nav coverage + load profile
   # ── Hero + primary CTAs ─────────────────────────────────────────────
   @smoke
   Scenario: Hero section renders the headline + primary CTAs
-    Then the hero heading should contain "Real devices"
+    # H1 headline copy is now built from two adjacent <span>s (lead + tail)
+    # with NO whitespace text node between them, so a fragment must stay on
+    # one side of that boundary or the substring check never matches — a
+    # word-spanning fragment like "story to raised" would fail even though
+    # both halves are genuinely on screen. Verified live 2026-08-08: the
+    # rendered H1 is "Real devices,zero lag." (no space at the span join).
+    Then the hero heading should contain "Real devices,"
     And I should see the "Start Free Trial" button
-    And I should see the "Sign in / Sign up" button
+    # "See how it works" is a per-slide secondary CTA (heroSlide1SecondaryCta
+    # in the bundle) — only slide 1 defines it. The currently-active slide is
+    # slide 2 ("Real devices, zero lag."), which has no secondary CTA at all,
+    # so this button is not a reliable invariant. Same reasoning already
+    # applied in robotactions-smoke.feature, which dropped it outright.
 
   # ── Top-level nav: hash anchors ─────────────────────────────────────
   Scenario Outline: Top-level nav anchors scroll to the right section
