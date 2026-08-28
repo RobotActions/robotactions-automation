@@ -12,21 +12,42 @@ interface MutableConfig extends Partial<GridConnection> {
     [key: string]: unknown;
 }
 
+/**
+ * Multiremote capabilities are an object whose values each wrap a real
+ * capability bag under `capabilities`. A single capability object is also
+ * a non-array object, but its values are primitives — telling the two apart
+ * matters because `beforeSession` receives the single-object shape while
+ * `onPrepare` receives an array.
+ */
+function isMultiremote(capabilities: Record<string, unknown>): boolean {
+    const values = Object.values(capabilities);
+    return (
+        values.length > 0 &&
+        values.every((v) => v !== null && typeof v === 'object' && 'capabilities' in (v as object))
+    );
+}
+
 function eachCapability(capabilities: Capabilities, visit: (cap: Capability) => void): void {
     if (Array.isArray(capabilities)) {
         for (const cap of capabilities) {
-            // Multiremote entries nest the real caps one level down.
             const nested = (cap as { capabilities?: Capability }).capabilities;
             visit(nested && typeof nested === 'object' ? nested : cap);
         }
         return;
     }
-    if (capabilities && typeof capabilities === 'object') {
+
+    if (!capabilities || typeof capabilities !== 'object') return;
+
+    if (isMultiremote(capabilities as Record<string, unknown>)) {
         for (const entry of Object.values(capabilities as Record<string, Capability>)) {
             const nested = (entry as { capabilities?: Capability }).capabilities;
             visit(nested && typeof nested === 'object' ? nested : entry);
         }
+        return;
     }
+
+    // A plain single capability bag — never iterate its values.
+    visit(capabilities as Capability);
 }
 
 /** Applies the `ra:` labels, never overwriting what the user set explicitly. */
@@ -38,6 +59,18 @@ function applyLabels(capabilities: Capabilities, options: RobotActionsOptions): 
         if (testSuite && cap['ra:testsuite'] === undefined) cap['ra:testsuite'] = testSuite;
         if (releaseId && cap['ra:releaseId'] === undefined) cap['ra:releaseId'] = releaseId;
     });
+}
+
+/**
+ * A dashboard column wants the assertion, not a stack trace. WebdriverIO hands
+ * us the full `Error.stack`, whose frames carry absolute paths from whichever
+ * machine ran the suite — noise in a shared dashboard, and CI runner paths in
+ * the worst case. Keep the first line and cap it.
+ */
+function summarize(message: string, fallback: string): string {
+    const firstLine = message.split('\n')[0].trim();
+    if (!firstLine) return fallback;
+    return firstLine.length > 300 ? `${firstLine.slice(0, 297)}...` : firstLine;
 }
 
 /**
@@ -91,14 +124,14 @@ export default class RobotActionsService {
     /** Mocha / Jasmine. */
     afterTest(_test: unknown, _context: unknown, result: { passed?: boolean; error?: { message?: string } }): void {
         if (result?.passed === false) {
-            this.failureReason = result.error?.message ?? 'Test failed';
+            this.failureReason = summarize(result.error?.message ?? '', 'Test failed');
         }
     }
 
     /** Cucumber. `result.passed` is absent, so read the status instead. */
     afterScenario(_world: unknown, result: { passed?: boolean; error?: string }): void {
         if (result?.passed === false) {
-            this.failureReason = result.error ?? 'Scenario failed';
+            this.failureReason = summarize(result.error ?? '', 'Scenario failed');
         }
     }
 
