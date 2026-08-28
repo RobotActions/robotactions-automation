@@ -105,12 +105,30 @@ export function suiteName(fallback = 'WebdriverIO'): string {
  * for `result.error.message` directly silently got `undefined` for every
  * failure and fell back to the scenario name, which reports THAT A test failed
  * but never WHY — the dashboard's failure column read as a list of test titles.
+ *
+ * MUST be a single line. The reason is interpolated into the magic string
+ * `ra:job-result=failed:<reason>`, which the grid proxy matches with an
+ * anchored `(.+)` — and `.` does not cross a newline. When Cucumber hands the
+ * error over as a string it is the whole stack trace, so an unsanitised reason
+ * failed to match, was forwarded to the browser as real JavaScript, and came
+ * back as `WebDriverError: Invalid left-hand side in assignment` while the
+ * verdict was silently dropped. Verified on a real device 2026-08-28: the
+ * failing scenario recorded test_name but no result at all.
+ *
+ * A stack trace's first line is the message, so taking it loses nothing.
  */
 export function errorText(error: unknown): string {
-    if (!error) return 'scenario failed';
-    if (typeof error === 'string') return error;
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' ? message : 'scenario failed';
+    const raw = !error
+        ? ''
+        : typeof error === 'string'
+            ? error
+            : typeof (error as { message?: unknown }).message === 'string'
+                ? (error as { message: string }).message
+                : '';
+    // First line only, then collapse any surviving whitespace runs — a tab or
+    // a stray \r would travel fine but renders badly in the dashboard column.
+    const firstLine = raw.split('\n')[0].replace(/\s+/g, ' ').trim();
+    return firstLine || 'scenario failed';
 }
 
 /** Application under test. */
