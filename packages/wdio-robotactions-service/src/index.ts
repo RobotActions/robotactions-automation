@@ -109,7 +109,8 @@ export class launcher {
  */
 export default class RobotActionsService {
     private readonly options: RobotActionsOptions;
-    private failureReason = '';
+    private firstFailure = '';
+    private failureCount = 0;
 
     constructor(options: RobotActionsOptions = {}) {
         this.options = options;
@@ -124,20 +125,34 @@ export default class RobotActionsService {
     /** Mocha / Jasmine. */
     afterTest(_test: unknown, _context: unknown, result: { passed?: boolean; error?: { message?: string } }): void {
         if (result?.passed === false) {
-            this.failureReason = summarize(result.error?.message ?? '', 'Test failed');
+            this.recordFailure(summarize(result.error?.message ?? '', 'Test failed'));
         }
     }
 
     /** Cucumber. `result.passed` is absent, so read the status instead. */
     afterScenario(_world: unknown, result: { passed?: boolean; error?: string }): void {
         if (result?.passed === false) {
-            this.failureReason = summarize(result.error ?? '', 'Scenario failed');
+            this.recordFailure(summarize(result.error ?? '', 'Scenario failed'));
         }
     }
 
+    /**
+     * Keeps the first failure, not the last. A later failure is often a
+     * consequence of the first, and the dashboard shows one line — so the
+     * earliest breakage is the more useful one to surface. The count tells
+     * the reader there is more to look at.
+     */
+    private recordFailure(reason: string): void {
+        this.failureCount += 1;
+        if (!this.firstFailure) this.firstFailure = reason;
+    }
+
     async after(): Promise<void> {
-        const status = this.failureReason ? 'failed' : 'passed';
-        const reason = this.failureReason || 'All tests passed';
+        const status = this.failureCount > 0 ? 'failed' : 'passed';
+        const reason =
+            this.failureCount > 1
+                ? `${this.failureCount} failed. First: ${this.firstFailure}`
+                : this.firstFailure || 'All tests passed';
 
         try {
             await (globalThis as { browser?: { execute: (script: string, arg: unknown) => Promise<unknown> } })
