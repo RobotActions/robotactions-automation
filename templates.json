@@ -1,0 +1,131 @@
+{
+  "version": "1.1.0",
+  "templates": [
+    {
+      "id": "playwright",
+      "name": "Playwright + TypeScript",
+      "description": "BDD testing with playwright-bdd and Playwright Test. Feature files with Given/When/Then steps powered by Playwright's fast execution engine.",
+      "framework": "playwright",
+      "language": "typescript",
+      "runner": "playwright-test",
+      "bdd": "playwright-bdd",
+      "target": "browser",
+      "tags": ["bdd", "typescript", "playwright", "browser", "web"],
+      "entryCommand": "npx bddgen && npx playwright test",
+      "secondaryCommand": "npx playwright test --config=playwright.regular.config.ts",
+      "dependencies": {
+        "@playwright/test": "^1.58.0",
+        "playwright-bdd": "^8.4.0",
+        "typescript": "^5.7.0"
+      }
+    },
+    {
+      "id": "playwright-python",
+      "name": "Playwright + Python + pytest-bdd",
+      "description": "BDD testing with pytest-bdd and Playwright for Python. Combines Playwright's speed and reliability with pytest's powerful fixture system.",
+      "framework": "playwright",
+      "language": "python",
+      "runner": "pytest",
+      "bdd": "pytest-bdd",
+      "target": "browser",
+      "tags": ["bdd", "python", "playwright", "pytest", "browser", "web"],
+      "entryCommand": "pytest tests/step_defs/ -v --junitxml=reports/junit.xml",
+      "secondaryCommand": "pytest tests/ -v --junitxml=reports/junit.xml --ignore=tests/step_defs",
+      "dependencies": {
+        "playwright": ">=1.50.0",
+        "pytest": ">=8.3.0",
+        "pytest-bdd": ">=8.1.0",
+        "pytest-playwright": ">=0.6.0",
+        "pytest-html": ">=4.1.0"
+      }
+    },
+    {
+      "id": "wdio",
+      "name": "WebdriverIO + Cucumber + TypeScript",
+      "description": "BDD testing with WebdriverIO v9 and Cucumber framework. Gherkin feature files with step definitions using WebdriverIO's powerful browser automation.",
+      "framework": "webdriverio",
+      "language": "typescript",
+      "runner": "wdio",
+      "bdd": "cucumber",
+      "target": "browser",
+      "tags": ["bdd", "typescript", "webdriverio", "cucumber", "browser", "web"],
+      "entryCommand": "npx wdio run wdio.conf.ts",
+      "secondaryCommand": "npx wdio run wdio.mocha.conf.ts",
+      "dependencies": {
+        "@wdio/cli": "^9.24.0",
+        "@wdio/local-runner": "^9.24.0",
+        "@wdio/cucumber-framework": "^9.20.0",
+        "@wdio/spec-reporter": "^9.0.0",
+        "webdriverio": "^9.24.0",
+        "typescript": "^5.7.0",
+        "ts-node": "^10.9.0"
+      }
+    },
+    {
+      "id": "appium-js",
+      "name": "Appium + WebdriverIO + Cucumber (Mobile)",
+      "description": "Mobile BDD test automation with WebdriverIO, Appium, and Cucumber. Supports Android (UiAutomator2) and iOS (XCUITest) with app install/upload, touch gestures, and accessibility ID selectors.",
+      "framework": "webdriverio",
+      "language": "typescript",
+      "runner": "wdio",
+      "bdd": "cucumber",
+      "target": "mobile",
+      "tags": ["bdd", "typescript", "webdriverio", "appium", "cucumber", "mobile", "android", "ios"],
+      "entryCommand": "npx wdio run wdio.conf.ts",
+      "secondaryCommand": "npx wdio run wdio.mocha.conf.ts",
+      "dependencies": {
+        "@wdio/cli": "^9.24.0",
+        "@wdio/local-runner": "^9.24.0",
+        "@wdio/appium-service": "^9.0.0",
+        "@wdio/cucumber-framework": "^9.20.0",
+        "@wdio/spec-reporter": "^9.0.0",
+        "webdriverio": "^9.24.0",
+        "typescript": "^5.7.0",
+        "ts-node": "^10.9.0"
+      }
+    },
+    {
+      "id": "selenium-python",
+      "name": "Selenium + Python + pytest-bdd",
+      "description": "BDD testing with pytest-bdd, Selenium WebDriver, and Appium-Python-Client. PLATFORM env var (web|android|ios) selects driver — same template covers desktop browsers, Android apps, and iOS apps via the shared WebDriver protocol.",
+      "framework": "selenium",
+      "language": "python",
+      "runner": "pytest",
+      "bdd": "pytest-bdd",
+      "target": "browser+mobile",
+      "tags": ["bdd", "python", "selenium", "appium", "pytest", "browser", "web", "mobile", "android", "ios"],
+      "entryCommand": "pytest tests/step_defs/ -v --junitxml=reports/junit.xml",
+      "secondaryCommand": "pytest tests/ -v --junitxml=reports/junit.xml --ignore=tests/step_defs",
+      "dependencies": {
+        "selenium": ">=4.41.0",
+        "Appium-Python-Client": ">=4.5.1",
+        "pytest": ">=8.3.0",
+        "pytest-bdd": ">=8.1.0",
+        "pytest-html": ">=4.1.0"
+      }
+    },
+    {
+      "id": "selenium-java",
+      "name": "Selenium + Java + Cucumber-JVM",
+      "description": "BDD testing with Cucumber-JVM, Selenium 4, and Appium Java Client. PLATFORM env var (web|android|ios) selects driver — same template covers desktop browsers, Android apps, and iOS apps via a shared driver factory. Maven build, JUnit 5 runner, Java 17.",
+      "framework": "selenium",
+      "language": "java",
+      "runner": "maven-surefire",
+      "bdd": "cucumber-jvm",
+      "target": "browser+mobile",
+      "tags": ["bdd", "java", "selenium", "appium", "cucumber", "maven", "junit5", "browser", "web", "mobile", "android", "ios"],
+      "entryCommand": "mvn test -Dtest=RunCucumberTest",
+      "secondaryCommand": "mvn test -Dtest='*RegularTest'",
+      "dependencies": {
+        "selenium-java": "4.27.0",
+        "java-client": "9.3.0",
+        "cucumber-java": "7.20.1",
+        "cucumber-junit-platform-engine": "7.20.1",
+        "junit-jupiter": "5.11.4",
+        "junit-platform-suite": "1.11.4",
+        "webdrivermanager": "5.9.2",
+        "dotenv-java": "3.0.0"
+      }
+    }
+  ]
+}
