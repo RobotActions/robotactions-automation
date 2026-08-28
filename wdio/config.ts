@@ -97,6 +97,22 @@ export function suiteName(fallback = 'WebdriverIO'): string {
     return str('RA_TESTSUITE', fallback);
 }
 
+/**
+ * Text of a Cucumber scenario failure, for `ra:job-result=failed:<reason>`.
+ *
+ * `PickleResult.error` is typed `string` but arrives as an Error object for
+ * most real failures, so both shapes have to be handled. Configs that reached
+ * for `result.error.message` directly silently got `undefined` for every
+ * failure and fell back to the scenario name, which reports THAT A test failed
+ * but never WHY — the dashboard's failure column read as a list of test titles.
+ */
+export function errorText(error: unknown): string {
+    if (!error) return 'scenario failed';
+    if (typeof error === 'string') return error;
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' ? message : 'scenario failed';
+}
+
 /** Application under test. */
 export function baseUrl(fallback = '{{BASE_URL}}'): string {
     return str('BASE_URL', fallback);

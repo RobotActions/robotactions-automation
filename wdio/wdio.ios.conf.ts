@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, gridConnection, maxInstances, releaseId, suiteName } from './config';
+import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 // 5 iOS Safari workers — single connected iPad serves them one at a time,
@@ -85,7 +85,35 @@ export const config = {
         }
     },
 
-    afterScenario: async function (_world: unknown) {
+    /**
+     * Stamp pass/fail BEFORE reloadSession() tears the session down.
+     *
+     * These capabilities carry `ra:autoFailDetect: false`, which opts out of
+     * the proxy's last-command-errored heuristic on the promise that this hook
+     * reports explicitly. It did not — the hook only recycled the session — so
+     * every run from this config landed in the dashboard as "no pass/fail was
+     * reported" with both mechanisms disabled. Measured 2026-08-28: 146 of 531
+     * sessions in a week had no verdict, and the named ones traced back here.
+     *
+     * Order matters: the magic string has to reach the proxy while the session
+     * is still alive. reloadSession() below ends THIS session and opens a fresh
+     * one for the next scenario.
+     */
+    afterScenario: async function (
+        _world: unknown,
+        result: { passed?: boolean; error?: unknown } | undefined,
+    ) {
+        try {
+            // Default to passed: `result` is undefined only when Cucumber
+            // could not classify the scenario, and treating that as a failure
+            // would cry wolf on every framework hiccup.
+            if (result?.passed !== false) {
+                await (globalThis as any).browser.execute('ra:job-result=passed');
+            } else {
+                const reason = errorText(result?.error).slice(0, 256);
+                await (globalThis as any).browser.execute(`ra:job-result=failed:${reason}`);
+            }
+        } catch (_e) { /* best-effort — never fail a scenario over reporting */ }
         try { await (globalThis as any).browser.reloadSession(); } catch (_e) { /* best-effort */ }
     },
 };
