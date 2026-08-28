@@ -22,6 +22,19 @@ from selenium.webdriver.remote.webdriver import WebDriver
 # console log to the active Allure scenario. Requires the `driver` fixture
 # to be function-scoped so attachments bind to the correct scenario
 # (allure-pytest-bdd #475).
+def _safe_attach(fn) -> None:
+    """Run an Allure attachment, swallowing anything it raises.
+
+    Deliberately does NOT report its own failure through Allure — doing that
+    was the original bug, since the reporting call has the same failure mode as
+    the call it was reporting on.
+    """
+    try:
+        fn()
+    except Exception:
+        pass
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
@@ -30,31 +43,36 @@ def pytest_runtest_makereport(item, call):
     if rep.when == "call" and rep.failed:
         driver = item.funcargs.get("driver")
         if driver is not None:
-            try:
-                allure.attach(
-                    driver.get_screenshot_as_png(),
-                    name="screenshot-on-failure",
-                    attachment_type=allure.attachment_type.PNG,
-                )
-            except Exception as e:
-                allure.attach(str(e), name="screenshot-error", attachment_type=allure.attachment_type.TEXT)
-            try:
-                allure.attach(
-                    driver.page_source,
-                    name="page-source",
-                    attachment_type=allure.attachment_type.HTML,
-                )
-            except Exception as e:
-                allure.attach(str(e), name="page-source-error", attachment_type=allure.attachment_type.TEXT)
-            try:
-                logs = driver.get_log("browser")
-                allure.attach(
-                    "\n".join(repr(entry) for entry in logs),
-                    name="browser-console.log",
-                    attachment_type=allure.attachment_type.TEXT,
-                )
-            except Exception:
-                pass
+            # Evidence capture is best-effort and MUST NOT escape this hook.
+            #
+            # It used to: the error handlers called allure.attach to report
+            # their own failure, and allure.attach is exactly what raises when
+            # there is no active scenario to attach to
+            # (`KeyError: None` from allure_commons.lifecycle). The exception
+            # escaped pytest_runtest_makereport, which pytest treats as an
+            # INTERNALERROR and aborts the entire run on — so every remaining
+            # test's session was created and then never reported, landing in
+            # the dashboard as an automation run with no pass/fail. Observed
+            # 2026-08-25: nine such sessions inside a three-minute window.
+            #
+            # The outcome itself is already safe — `setattr(rep_*)` above runs
+            # before any of this — so swallowing here costs a screenshot at
+            # worst and protects the verdict for the whole rest of the run.
+            _safe_attach(lambda: allure.attach(
+                driver.get_screenshot_as_png(),
+                name="screenshot-on-failure",
+                attachment_type=allure.attachment_type.PNG,
+            ))
+            _safe_attach(lambda: allure.attach(
+                driver.page_source,
+                name="page-source",
+                attachment_type=allure.attachment_type.HTML,
+            ))
+            _safe_attach(lambda: allure.attach(
+                "\n".join(repr(entry) for entry in driver.get_log("browser")),
+                name="browser-console.log",
+                attachment_type=allure.attachment_type.TEXT,
+            ))
 
 
 def _apply_chrome_args(options) -> None:
