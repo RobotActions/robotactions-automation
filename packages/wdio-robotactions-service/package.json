@@ -1,0 +1,36 @@
+{
+  "name": "wdio-robotactions-service",
+  "version": "0.1.0",
+  "description": "WebdriverIO service for the RobotActions grid — real Android and iOS devices plus browser nodes behind one endpoint, with automatic test-status reporting.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "wdio-service", "webdriverio", "wdio", "appium", "device-farm",
+    "real-devices", "android", "ios", "selenium", "robotactions"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/krishtoautomate/robotactions-automation.git",
+    "directory": "packages/wdio-robotactions-service"
+  },
+  "homepage": "https://robotactions.com",
+  "bugs": "https://github.com/krishtoautomate/robotactions-automation/issues",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "peerDependencies": { "webdriverio": "^8.0.0 || ^9.0.0" },
+  "devDependencies": { "typescript": "^5.7.0", "@types/node": "^22.0.0" },
+  "publishConfig": { "access": "public" }
+}
