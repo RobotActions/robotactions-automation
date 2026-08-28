@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, gridConnection, maxInstances, releaseId, suiteName } from './config';
+import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -77,8 +77,8 @@ export const config = {
     },
 
     afterScenario: async function (
-        world: { pickle?: { name?: string } } | undefined,
-        result: { passed?: boolean; error?: { message?: string } } | undefined,
+        _world: unknown,
+        result: { passed?: boolean; error?: unknown } | undefined,
     ) {
         // Tag session pass/fail BEFORE reloadSession (same shape as iOS conf —
         // see wdio.ios-2.conf.ts for the why on ordering).
@@ -87,9 +87,7 @@ export const config = {
             if (passed) {
                 await (globalThis as any).browser.execute('ra:job-result=passed');
             } else {
-                const reason = String(
-                    result?.error?.message || world?.pickle?.name || 'scenario failed',
-                ).slice(0, 256);
+                const reason = errorText(result?.error).slice(0, 256);
                 await (globalThis as any).browser.execute(`ra:job-result=failed:${reason}`);
             }
         } catch (_e) { /* best-effort */ }

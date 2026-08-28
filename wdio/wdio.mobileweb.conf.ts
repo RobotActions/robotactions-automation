@@ -7,19 +7,11 @@
  * Run: AUTH_TOKEN=... GRID_HOST=localhost:5555 npx wdio run wdio.mobileweb.conf.ts
  */
 // Environment is read only in ./config.ts — never process.env directly here.
-import { gridConnection, maxInstances, suiteName } from './config';
+import { errorText, gridConnection, maxInstances, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 
 // Pin to the first real Android UDID from .env so Grid routes to the physical device.
-
-/** PickleResult.error may be a string or an Error depending on the failure. */
-function errorText(error: unknown): string {
-    if (!error) return 'scenario failed';
-    if (typeof error === 'string') return error;
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' ? message : 'scenario failed';
-}
 
 export const config: WebdriverIO.Config = {
     runner: 'local',
