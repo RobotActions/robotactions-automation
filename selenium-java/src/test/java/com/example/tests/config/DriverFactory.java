@@ -147,6 +147,11 @@ public final class DriverFactory {
         Map<String, Object> logPrefs = new HashMap<>();
         logPrefs.put("browser", "ALL");
         options.setCapability("goog:loggingPrefs", logPrefs);
+        // Group this run in the dashboard. Both mobile paths below already set
+        // this; the desktop path did not, so every web session landed with an
+        // empty Suite column and could not be filtered or rolled up — it was
+        // indistinguishable from the untagged internal traffic.
+        options.setCapability("ra:testsuite", Env.testSuite());
 
         // One-shot retry on createSession failure for two known-transient
         // proxy responses:
