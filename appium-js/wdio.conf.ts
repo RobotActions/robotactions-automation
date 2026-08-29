@@ -48,9 +48,9 @@ const iosCapability = {
     // App install: set APP_PATH to .ipa/.app file path or URL for auto-install
     ...(process.env.APP_PATH ? { 'appium:app': process.env.APP_PATH } : {}),
     // iOS 17+/18+: build-at-session-start is unreliable on these devices. Set
-    // USE_PREINSTALLED_WDA=true to use a runner already installed on the device
+    // USE_PREINSTALLED_RUNNER=true to use a runner already installed on the device
     // instead. Install it once beforehand.
-    ...(process.env.USE_PREINSTALLED_WDA === 'true'
+    ...(process.env.USE_PREINSTALLED_RUNNER === 'true'
         ? {
               'appium:usePreinstalledWDA': true,
               'appium:updatedWDABundleId':
