@@ -22,14 +22,11 @@ import java.util.Map;
 public final class DriverFactory {
 
     /**
-     * Session-creation timeout. On KEDA-scaled grids the chrome-148 deployment
-     * starts at min=2 pods and scales up only after the scaler's pollingInterval
-     * (~20 s) plus pod startup (~30-60 s on cold image cache). A burst of N
-     * concurrent createSession calls where N &gt; current ready pods will queue
-     * in the hub for that scale-up window. 300 s safely covers both polling +
-     * startup at the upper end. Below this value, parallel sanity/regression
-     * runs intermittently fail with HttpTimeoutException on the very first
-     * commands of each scenario before KEDA can react.
+     * Session-creation timeout. A burst of concurrent createSession calls can
+     * exceed the capacity currently ready, and the excess queues while the grid
+     * scales up. 300 s comfortably covers that window; below it, parallel runs
+     * intermittently fail with HttpTimeoutException on the first commands of a
+     * scenario, before capacity catches up.
      */
     private static final Duration SESSION_TIMEOUT = Duration.ofSeconds(300);
 
@@ -120,7 +117,7 @@ public final class DriverFactory {
             .connectionTimeout(SESSION_TIMEOUT)
             .withFilter(authHeaderFilter().andThen(new AddSeleniumUserAgent()));
         // HTTP/1.1-only client — see Http11HttpClientFactory javadoc for the
-        // h2c-upgrade incompatibility with the appium-grid-service proxy.
+        // h2c-upgrade incompatibility.
         // Use the (Map, ClientConfig, Factory) constructor — Selenium 4.27
         // doesn't offer a (Map, URL, ClientConfig, Factory) overload, but
         // ClientConfig.baseUrl() carries the URL.
@@ -135,11 +132,9 @@ public final class DriverFactory {
         if (Env.ci()) {
             options.addArguments("--headless=new", "--disable-gpu");
         }
-        // Pin sessions to the k8s chrome-148 stereotype (browserName=chrome,
-        // browserVersion=148, platformName=any). This prevents the Selenium hub
-        // from routing the session to a local-Mac Appium Android Chrome slot
-        // if one ever appears in the stereotype set — we want the cloud k8s
-        // chrome-148 pods (KEDA-scaled) every time.
+        // Pin the browser version so the grid routes to a desktop Chrome
+        // node every time, rather than to a mobile Chrome slot if one is
+        // available in the pool.
         options.setBrowserVersion("148");
         // Enable browser-console log retrieval for "no console errors" assertions.
         // Chrome 132+ may not support this; RobotActionsLoadSteps.assertNoConsoleSevereErrors()
@@ -155,11 +150,9 @@ public final class DriverFactory {
 
         // One-shot retry on createSession failure for two known-transient
         // proxy responses:
-        //   1. "Auth service unavailable" — the appium-grid-service proxy's
-        //      remote validate against RemoteDeviceServer has a 5s timeout
-        //      and the validate endpoint occasionally exceeds that on the
-        //      first cold call of a run. Subsequent calls within 60s hit
-        //      the proxy's in-memory token cache and never re-validate, so
+        //   1. "Auth service unavailable" — token validation can occasionally
+        //      time out on the first cold call of a run. Later calls in the
+        //      same run do not hit that path, so
         //      a single retry effectively pre-warms the cache.
         //   2. "Concurrency limit reached" — proxy per-identity semaphore.
         //      A short pause lets in-flight createSessions release their
@@ -196,10 +189,9 @@ public final class DriverFactory {
      * extension cap — NOT plain W3C {@code browserName}. The grid's device
      * nodes advertise a single native stereotype carrying only
      * {@code platformName: ANDROID} plus {@code appium:*} keys; the mobile-web
-     * second-stereotype that used to advertise {@code browserName: chrome} was
-     * removed from appium-grid-service's TOML generator (src/generators/toml.ts,
-     * 2026-06-21) because it added a second slot per handset and let the
-     * distributor hand out two concurrent sessions to one device.
+     * second stereotype that used to advertise {@code browserName: chrome} was
+     * removed in 2026-06 because it added a second slot per handset and allowed
+     * two concurrent sessions on one device.
      *
      * <p>Selenium's DefaultSlotMatcher compares only W3C {@code browserName};
      * sending it here matches no slot at all, so the hub queues the request
@@ -244,7 +236,7 @@ public final class DriverFactory {
      * the grid distributes to any free iOS slot.
      */
     private static WebDriver createIosMobileWeb() {
-        // The XCUITest driver handles the WebDriverAgent + safaridriver bridge
+        // The XCUITest driver handles the Safari automation bridge
         // automatically once appium:browserName selects Safari.
         org.openqa.selenium.remote.DesiredCapabilities caps =
             new org.openqa.selenium.remote.DesiredCapabilities();

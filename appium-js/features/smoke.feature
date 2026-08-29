@@ -2,13 +2,12 @@
 Feature: Device automation smoke
   As an automation engineer
   I want to confirm the automation session starts on the device
-  So that I know WebDriverAgent (iOS) / UiAutomator2 (Android) is healthy
+  So that I know the device automation stack is healthy
   before running real tests.
 
   # None of these scenarios need an app under test. A live session already
-  # proves the automation server came up — on iOS 17+/18+ HID devices that
-  # means the preinstalled WDA was launched via devicectl with zero xcodebuild
-  # (see docs/IOS18_APPIUM_PREINSTALLED_WDA.md in the RemoteDeviceServer repo).
+  # proves the automation server came up — including on iOS 17+/18+ devices,
+  # where a preinstalled runner is used instead of building one per session.
   #
   # They are separate scenarios rather than one, so a failure names the
   # capability that broke instead of collapsing every check into a single

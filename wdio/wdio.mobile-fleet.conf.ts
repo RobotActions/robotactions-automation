@@ -19,9 +19,9 @@ const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19
 const SUITE = suiteName('wdio-fleet-2026-06-06');
 const RELEASE_ID = releaseId(`run-${RUN_TIMESTAMP}`);
 
-// Vendor-prefixed RA caps shared by every entry below. The proxy strips
-// them before forwarding to the Selenium hub, so SE_REJECT_UNSUPPORTED_CAPS
-// can't trip on them, then persists onto sessions.test_*.
+// Vendor-prefixed RA caps shared by every entry below. The grid strips them
+// before the session is created, so SE_REJECT_UNSUPPORTED_CAPS can't trip on
+// them, then persists them onto sessions.test_*.
 const RA_CAPS = {
     'ra:testsuite': SUITE,
     'ra:releaseId': RELEASE_ID,

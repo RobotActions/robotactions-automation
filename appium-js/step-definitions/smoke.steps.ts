@@ -2,10 +2,10 @@ import { Given, Then } from '@cucumber/cucumber';
 
 /**
  * Device-level smoke steps. These assert the automation session itself is
- * healthy (WebDriverAgent up on iOS / UiAutomator2 up on Android) without
+ * healthy (the device automation stack is up) without
  * requiring an app under test — the session existing already proves the
- * automation server started. On iOS 17+/18+ HID devices, that means the
- * preinstalled WDA was launched via devicectl with zero xcodebuild.
+ * automation server started — including on iOS 17+/18+ devices, where a
+ * preinstalled runner is used instead of building one per session.
  */
 
 Given('an automation session is active', async () => {

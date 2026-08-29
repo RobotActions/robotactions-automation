@@ -230,7 +230,7 @@ def platform() -> str:
 
 
 def _executor_url(grid_url: str, auth_token: str) -> str:
-    """Build the remote executor URL using the appium-grid-service path-prefix
+    """Build the remote executor URL using the grid's path-prefix
     auth pattern: the token is embedded as `/t/<token>` in the URL and the
     proxy strips it before forwarding to the Hub. Works for Selenium Grid and
     for Appium servers fronted by the same proxy."""
@@ -268,12 +268,9 @@ def browser(request, grid_url: str, auth_token: str) -> WebDriver:
         options.add_argument("--headless=new")
         options.add_argument("--disable-gpu")
 
-    # Pin sessions to the k8s chrome-148 stereotype. KEDA's selenium-grid
-    # scaler for chrome-148 filters on browserVersion=148 — requests that
-    # omit browserVersion do not match the trigger, so the autoscaler
-    # never sees the demand and chrome-148 stays at min replicas. Setting
-    # it here guarantees KEDA reacts to load from this client. Override
-    # by setting RA_BROWSER_VERSION env var (e.g. "147" to target chrome-147).
+    # Pin the browser version so the request matches a desktop Chrome node
+    # and the grid can scale capacity to meet demand from this client.
+    # Override with the RA_BROWSER_VERSION env var (e.g. "147").
     options.browser_version = os.environ.get("RA_BROWSER_VERSION", "148")
 
     # Enable browser-console log retrieval.  Chrome 132+ Grid nodes may drop

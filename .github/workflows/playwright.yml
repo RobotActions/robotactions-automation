@@ -24,7 +24,7 @@ on:
         required: false
         default: ''
       playwright_mode:
-        description: 'ws = Playwright container fleet (recommended); selenium-remote routes via the Selenium hub'
+        description: 'ws = direct Playwright endpoint (recommended); selenium-remote routes via the WebDriver endpoint'
         type: choice
         required: true
         default: ws

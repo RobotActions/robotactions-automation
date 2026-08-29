@@ -105,13 +105,13 @@ export type GridMode = 'ws' | 'selenium-remote' | 'local';
 /**
  * Which routing mode applies.
  *
- * `ws` — connect to the grid's Playwright container fleet
- *        (`ws://<host>/playwright/<browser>`). Preferred: it bypasses the
- *        Selenium hub, so there is no distributor desync or ghost sessions.
- * `selenium-remote` — route through the Selenium Grid hub via
+ * `ws` — connect to the grid's Playwright endpoint
+ *        (`ws://<host>/playwright/<browser>`). Preferred, and the more reliable
+ *        of the two for a Playwright-only suite.
+ * `selenium-remote` — route through the WebDriver endpoint via
  *        `SELENIUM_REMOTE_URL`. Use only when mixing Playwright and Selenium
  *        clients on one grid; Playwright does not always send
- *        `DELETE /session/<id>`, which leaks hub slots.
+ *        `DELETE /session/<id>`, which can leave sessions held open.
  * `local` — no grid configured; Playwright launches a local browser.
  */
 export function gridMode(): GridMode {

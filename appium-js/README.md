@@ -66,7 +66,7 @@ All device and server settings are controlled via environment variables (set in 
 | `APP_ACTIVITY`  | `.MainActivity`      | Android launch activity                          |
 | `BUNDLE_ID`     | `com.example.app`    | iOS app bundle ID                                |
 | `APP_PATH`      | _(empty)_            | Path or URL to .apk/.ipa — auto-installs before tests |
-| `GRID_HOST`     | `localhost:5555`     | Grid auth/capture proxy `host:port`. A standalone Appium server instead listens on `:4723`. |
+| `GRID_HOST`     | `localhost:5555`     | Grid endpoint `host:port`. A standalone Appium server instead listens on `:4723`. |
 | `AUTH_TOKEN`    | _(empty)_            | Bearer token for authenticated grid endpoints    |
 
 ## Commands
@@ -95,7 +95,7 @@ GRID_HOST=localhost:5555
 ## iOS Setup
 
 1. Connect a device or start a simulator
-2. Ensure WebDriverAgent is built and signed for your team
+2. Ensure the iOS automation runner is built and signed for your team
 3. Set `PLATFORM=ios`, `DEVICE_UDID`, and `BUNDLE_ID`
 
 ```env
@@ -105,7 +105,7 @@ BUNDLE_ID=com.mycompany.myapp
 GRID_HOST=localhost:5555
 ```
 
-## Remote Grid (RemoteDeviceServer)
+## Remote Grid
 
 Point `GRID_HOST` at your grid and supply `AUTH_TOKEN`:
 
