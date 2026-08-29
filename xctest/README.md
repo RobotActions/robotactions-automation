@@ -52,7 +52,7 @@ Pre-installing both the app and the `-Runner` app does not help: `xcodebuild` re
 its own CoreDevice install regardless and fails before any test executes.
 
 If you hit this, the bundle is fine — the gap is between `xcodebuild` and that host's
-CoreDevice. The same devices are driven successfully by Appium using the preinstalled-WDA
+CoreDevice. The same devices are driven successfully by Appium using a preinstalled runner
 path (`USE_PREINSTALLED_WDA=true`), which avoids `xcodebuild` entirely.
 
 ## Run on the grid's native runner

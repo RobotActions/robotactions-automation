@@ -95,7 +95,7 @@ GRID_HOST=localhost:5555
 ## iOS Setup
 
 1. Connect a device or start a simulator
-2. Ensure WebDriverAgent is built and signed for your team
+2. Ensure the iOS automation runner is built and signed for your team
 3. Set `PLATFORM=ios`, `DEVICE_UDID`, and `BUNDLE_ID`
 
 ```env
@@ -105,7 +105,7 @@ BUNDLE_ID=com.mycompany.myapp
 GRID_HOST=localhost:5555
 ```
 
-## Remote Grid (RemoteDeviceServer)
+## Remote Grid
 
 Point `GRID_HOST` at your grid and supply `AUTH_TOKEN`:
 

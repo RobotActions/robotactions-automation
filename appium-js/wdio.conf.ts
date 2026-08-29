@@ -47,11 +47,9 @@ const iosCapability = {
     'appium:wdaConnectionTimeout': 120000,
     // App install: set APP_PATH to .ipa/.app file path or URL for auto-install
     ...(process.env.APP_PATH ? { 'appium:app': process.env.APP_PATH } : {}),
-    // iOS 17+/18+ HID / CoreDevice-held devices: xcodebuild cannot launch WDA
-    // (CoreDevice holds the device). Set USE_PREINSTALLED_WDA=true to launch a
-    // *preinstalled* WDA runner via devicectl with zero xcodebuild. Install the
-    // runner once beforehand (RDS: scripts/ios/install-wda-runner.sh).
-    // See docs/IOS18_APPIUM_PREINSTALLED_WDA.md.
+    // iOS 17+/18+: build-at-session-start is unreliable on these devices. Set
+    // USE_PREINSTALLED_WDA=true to use a runner already installed on the device
+    // instead. Install it once beforehand.
     ...(process.env.USE_PREINSTALLED_WDA === 'true'
         ? {
               'appium:usePreinstalledWDA': true,
@@ -59,12 +57,11 @@ const iosCapability = {
                   process.env.WDA_BUNDLE_ID || 'com.facebook.WebDriverAgentRunner',
           }
         : {}),
-    // Optional: attach to a WDA you launched yourself (warm-WDA model) — Appium
-    // then does neither xcodebuild nor its own tunnel.
+    // Optional: attach to a runner you launched yourself, so Appium neither
+    // builds one nor manages its own connection.
     ...(process.env.WDA_URL ? { 'appium:webDriverAgentUrl': process.env.WDA_URL } : {}),
-    // Plugin-managed WDA: the appium-session-plugin starts stock WDA on-demand
-    // via pymobiledevice3 over the existing tunnel and injects webDriverAgentUrl
-    // (per-session; torn down on session end). Requires the session-plugin.
+    // Let the grid manage the iOS automation runner for the session and tear
+    // it down afterwards, instead of managing one yourself.
     ...(process.env.IOS_MANAGED_WDA === 'true'
         ? { 'ra:iosManagedWda': true, 'ra:liveVideo': false }
         : {}),

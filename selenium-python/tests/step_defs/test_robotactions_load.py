@@ -16,7 +16,7 @@ h2c-upgrade trap (IMPORTANT):
   The conftest.py driver fixture uses the /t/<token> path-prefix auth form.
   Python's urllib3 (used by selenium-python) speaks HTTP/1.1 by default and
   does NOT attempt an h2c upgrade, so the path-prefix strip and auth middleware
-  in the appium-grid-service proxy work correctly.  This is the opposite of the
+  in the grid work correctly.  This is the opposite of the
   Java Selenium client (which defaults to HTTP/2 and requires the custom
   Http11HttpClientFactory to force HTTP/1.1).  No special action is needed here.
 

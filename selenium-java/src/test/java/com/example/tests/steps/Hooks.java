@@ -22,8 +22,8 @@ public class Hooks {
         DriverHolder.set(DriverFactory.create());
         // Annotate the Grid session with the Cucumber scenario name so the
         // RobotActions dashboard shows the test name against each session.
-        // The ra:job-name= magic verb is processed by the appium-session-plugin
-        // and stored in sessions.test_name via executeScript interception.
+        // The ra:job-name= magic verb is intercepted by the grid and stored
+        // against the session rather than forwarded to the browser.
         WebDriver driver = DriverHolder.get();
         ((JavascriptExecutor) driver).executeScript("ra:job-name=" + scenario.getName());
     }
@@ -31,9 +31,9 @@ public class Hooks {
     @After
     public void stop(Scenario scenario) {
         // Report pass/fail on the same Grid session before quitting so
-        // sessions.result is populated alongside test_name. ra:job-result is a
-        // magic verb intercepted by the appium-session-plugin (not forwarded to
-        // the browser). Best-effort — never let reporting fail the teardown.
+        // the result is populated alongside the test name. ra:job-result is a
+        // magic verb intercepted by the grid (not forwarded to the browser).
+        // Best-effort — never let reporting fail the teardown.
         try {
             WebDriver driver = DriverHolder.get();
             if (driver != null) {

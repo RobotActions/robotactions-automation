@@ -3,7 +3,7 @@ import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName,
 import { createHash } from 'node:crypto';
 
 // Mobile-browser test config — Android Chrome via Appium UiAutomator2.
-// Targets the local Selenium Grid + appium-grid-service stack; Grid routes
+// Targets the local grid; the grid routes
 // each session to an available real Android device. Tag set the user
 // asked for: ra:testsuite, ra:releaseId, ra:testName, ra:testId. The
 // suite + releaseId are shared across the batch (set on the capability),

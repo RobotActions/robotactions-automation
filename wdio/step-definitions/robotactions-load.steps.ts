@@ -40,9 +40,8 @@ Given('I open the RobotActions home page', async function (this: RaWorld) {
 //
 // Pick the log type by platform so neither leg hits the "Unsupported log
 // type" rejection cascade. iOS requires `appium:showSafariConsoleLog: true`
-// in caps — auto-injected for every iOS session by the session plugin at
-// `packages/appium-session-plugin/src/plugin.ts:injectCapabilities`. With
-// that injection, `safariConsole` is reliably available on Safari/iOS.
+// in caps — the grid injects this for every iOS session, so `safariConsole`
+// is reliably available on Safari/iOS.
 async function getConsoleLogsCrossPlatform(): Promise<{ level: string; message: string; timestamp: number }[]> {
     const logType = (browser as { isIOS?: boolean }).isIOS ? 'safariConsole' : 'browser';
     try {
@@ -69,14 +68,14 @@ Given('I wait for the SPA to hydrate', async function (this: RaWorld) {
 
 // ── Hero + primary CTAs ───────────────────────────────────────────────────────
 //
-// Cross-platform text matching: WDA / XCUITestDriver's `*=fragment` and
+// Cross-platform text matching: the iOS native driver's `*=fragment` and
 // `=label` selectors are flaky against em-dashes, commas, and other
 // non-ASCII chars (verified empirically on iPadOS 26.4.2 — every heading
 // scenario with `—` or `,` failed even though Chrome handled them fine).
 //
 // Drop down to a single browser.execute that walks the DOM and returns
 // whether ANY visible element of the requested tag(s) contains the
-// fragment. Bypasses WDA's selector engine entirely.
+// fragment. Bypasses the native selector engine entirely.
 
 async function pageContainsText(opts: { fragment: string; tags?: string[]; scopeSelector?: string }): Promise<boolean> {
     const { fragment, tags = ['h1', 'h2', 'h3', 'h4'], scopeSelector } = opts;
@@ -160,7 +159,7 @@ Then('I should see the FAQ question containing {string}', async function (this: 
 // ── Top-level nav anchors ─────────────────────────────────────────────────────
 
 // Click-by-text helper: scrolls the target into view + clicks it from JS,
-// bypassing both WDA's text selector (flaky with `=label`) AND the
+// bypassing both the native text selector (flaky with `=label`) AND the
 // off-screen issue (iOS Safari refuses clicks on elements outside the
 // viewport unless we scroll first).
 async function clickElementByText(opts: { fragment: string; tags?: string[]; scopeSelector?: string }): Promise<boolean> {

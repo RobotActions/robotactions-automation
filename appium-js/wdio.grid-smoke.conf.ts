@@ -5,10 +5,10 @@ import { createHash } from 'node:crypto';
 // Selenium Grid hub (NOT a single Appium). Each capability entry is a slot
 // the Grid distributes to a distinct free device (every node has
 // maxSessions=1). It runs features/smoke.feature only (@device @smoke) —
-// no app under test; a live session already proves UiAutomator2 (Android) /
-// WDA+XCUITest (iOS) came up and the device is reachable.
+// no app under test; a live session already proves the automation stack came
+// up and the device is reachable.
 //
-// Fill counts from the live grid inventory: 8 Android + 1 iOS native slots.
+// Set these to match the number of free device slots you want to fill.
 const ANDROID_SLOTS = parseInt(process.env.ANDROID_SLOTS || '8', 10);
 const IOS_SLOTS = parseInt(process.env.IOS_SLOTS || '1', 10);
 
@@ -38,10 +38,8 @@ const iosCap = {
     'appium:automationName': 'xcuitest',
     'appium:noReset': true,
     'appium:newCommandTimeout': 120,
-    // iOS 17+/26 CoreDevice holds the device so xcodebuild can't launch WDA.
-    // IOS_MANAGED_WDA=true → the session-plugin starts stock WDA on-demand via
-    // pymobiledevice3 over the existing tunnel and injects webDriverAgentUrl
-    // per-session (torn down on session end). This is the working path here.
+    // IOS_MANAGED_WDA=true lets the grid manage the iOS automation runner for
+    // the session and tear it down afterwards. This is the working path here.
     ...(process.env.IOS_MANAGED_WDA === 'true'
         ? { 'ra:iosManagedWda': true, 'ra:liveVideo': false }
         : {}),

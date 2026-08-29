@@ -134,4 +134,4 @@ Translates to `pytest tests/step_defs/ -n 10 --count 3 --tags=@load`. Each xdist
 
 ## When the test_status / job-result hooks should fire
 
-The appium-grid-service supports test-status magic strings via `executeScript`. The `selenium-python` template has a hook in `conftest.py` that calls `driver.execute_script("ra:job-result=...")` automatically based on `pytest_runtest_makereport`. Don't manually call it from steps — the conftest hook is the single source of truth so the dashboard's pass/fail surface stays consistent.
+The grid supports test-status magic strings via `executeScript`. The `selenium-python` template has a hook in `conftest.py` that calls `driver.execute_script("ra:job-result=...")` automatically based on `pytest_runtest_makereport`. Don't manually call it from steps — the conftest hook is the single source of truth so the dashboard's pass/fail surface stays consistent.

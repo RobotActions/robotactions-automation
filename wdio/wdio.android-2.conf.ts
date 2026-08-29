@@ -27,7 +27,7 @@ const androidCap = {
 export const config = {
     runner: 'local' as const,
     // Same feature set as the iOS smoke run — selectors are platform-neutral
-    // (CSS / JS DOM walks), not WDA-specific.
+    // (CSS / JS DOM walks), not platform-specific.
     specs: ['./features/robotactions-smoke.feature'],
     exclude: [],
     maxInstances: maxInstances(2),
