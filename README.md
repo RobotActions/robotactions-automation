@@ -61,25 +61,22 @@ is what the templates are for.
 
 | Variable | Meaning |
 |---|---|
-| `GRID_URL` / `GRID_HOST` | Your grid endpoint, `host:port`. Blank runs a **local** browser. Point this at the **auth/capture proxy** (`:5555` locally), not the Selenium hub — see below. |
+| `GRID_URL` / `GRID_HOST` | Your grid endpoint, `host:port`. Blank runs a **local** browser. Use the endpoint your dashboard gives you (`:5555` locally) — see below. |
 | `AUTH_TOKEN` | Grid bearer token. Rides the URL path (`/t/<token>/…`) for Selenium/Appium and `?token=` on Playwright's WS upgrade — the templates handle this for you. |
 | `BASE_URL` | The application under test. |
 | `RA_TESTSUITE` | Suite label the grid stores against the session, so runs are identifiable in the dashboard. |
 
-### Point at the proxy, not the hub
+### Use the documented endpoint
 
-A RobotActions grid exposes two ports, and only one of them is meant for tests:
+Connect to the endpoint your dashboard gives you — `:5555` for a local grid, `443` for
+the hosted one. Other ports may be listening on the same host; they are not the test
+endpoint and are not supported.
 
-| Port | What it is |
-|---|---|
-| `5555` | **The auth/capture proxy — connect here.** Enforces the token, records commands, and rewrites the live-view / CDP URLs handed back to your client. |
-| `4444` | The raw Selenium hub. Internal. |
-
-Connecting to `4444` **does not fail** — sessions start and tests go green. You simply
-lose the auth gate, command capture, video, and live view, and the dashboard has no record
-of what ran. If a suite passes but the session is missing or blank in the dashboard, this
-is almost always why. (Earlier grid versions had these two ports the other way around; if
-you are carrying an old `.env`, check it.)
+Pointing somewhere else **does not necessarily fail** — a session can start and tests go
+green. What you lose is the token gate, session recording, video, and live view, so the
+dashboard has no record of what ran. If a suite passes but the session is missing or
+blank in the dashboard, this is almost always why. (If you are carrying an old `.env`
+from an earlier grid version, check it.)
 
 ## CI
 

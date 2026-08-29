@@ -23,14 +23,12 @@ import java.util.Set;
  * to HTTP_2 and attempts a cleartext h2c upgrade on every fresh connection
  * (Connection: Upgrade, HTTP2-Settings + Upgrade: h2c).
  *
- * The appium-grid-service proxy on :5555 wires its 'upgrade' event for WebSocket
- * traffic (CDP/BiDi/Playwright), so an h2c upgrade is byte-piped straight to the
- * Selenium hub — bypassing both the /t/&lt;token&gt; path strip and the auth
- * middleware. Any in-session command sent through the resulting h2 stream that
- * still carries a /t/&lt;token&gt; path prefix produces "Unable to find handler"
- * from the hub. Forcing HTTP/1.1 sends every request through the proxy's
- * regular request handler, where strip + auth + cap-lock + rate-limit all work
- * as designed.
+ * The grid handles WebSocket traffic (CDP/BiDi/Playwright) on a separate path
+ * from ordinary requests, and an h2c upgrade is treated as the former. An
+ * in-session command sent over the resulting h2 stream while still carrying a
+ * /t/&lt;token&gt; path prefix fails with "Unable to find handler". Forcing
+ * HTTP/1.1 keeps every request on the ordinary request path, where the token
+ * prefix is handled as expected.
  *
  * WebSocket open is delegated to a transient JdkHttpClient on demand — we don't
  * use BiDi in the smoke suite, so this path is only here for completeness.
@@ -114,8 +112,8 @@ public final class Http11HttpClientFactory implements HttpClient.Factory {
 
             // Body — drain Selenium's Contents InputStream into a byte[]
             // because we know WebDriver requests are small (JSON capabilities,
-            // command payloads). Streaming would force chunked encoding which
-            // the Selenium hub handles but is not worth the complexity here.
+            // command payloads). Streaming would force chunked encoding,
+            // which is not worth the complexity here.
             byte[] body;
             try (java.io.InputStream in = request.getContent().get()) {
                 body = in.readAllBytes();

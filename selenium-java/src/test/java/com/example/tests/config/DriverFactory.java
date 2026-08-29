@@ -135,11 +135,9 @@ public final class DriverFactory {
         if (Env.ci()) {
             options.addArguments("--headless=new", "--disable-gpu");
         }
-        // Pin sessions to the k8s chrome-148 stereotype (browserName=chrome,
-        // browserVersion=148, platformName=any). This prevents the Selenium hub
-        // from routing the session to a local-Mac Appium Android Chrome slot
-        // if one ever appears in the stereotype set — we want the cloud k8s
-        // chrome-148 pods (KEDA-scaled) every time.
+        // Pin the browser version so the grid routes to a desktop Chrome
+        // node every time, rather than to a mobile Chrome slot if one is
+        // available in the pool.
         options.setBrowserVersion("148");
         // Enable browser-console log retrieval for "no console errors" assertions.
         // Chrome 132+ may not support this; RobotActionsLoadSteps.assertNoConsoleSevereErrors()

@@ -66,7 +66,7 @@ All device and server settings are controlled via environment variables (set in 
 | `APP_ACTIVITY`  | `.MainActivity`      | Android launch activity                          |
 | `BUNDLE_ID`     | `com.example.app`    | iOS app bundle ID                                |
 | `APP_PATH`      | _(empty)_            | Path or URL to .apk/.ipa — auto-installs before tests |
-| `GRID_HOST`     | `localhost:5555`     | Grid auth/capture proxy `host:port`. A standalone Appium server instead listens on `:4723`. |
+| `GRID_HOST`     | `localhost:5555`     | Grid endpoint `host:port`. A standalone Appium server instead listens on `:4723`. |
 | `AUTH_TOKEN`    | _(empty)_            | Bearer token for authenticated grid endpoints    |
 
 ## Commands
