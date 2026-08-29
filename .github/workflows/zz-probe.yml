@@ -1,5 +1,7 @@
 name: zz-probe
-on: workflow_dispatch
+on:
+  push:
+    branches: [ci/use-robotactions-action]
 jobs:
   probe:
     runs-on: ubuntu-latest
