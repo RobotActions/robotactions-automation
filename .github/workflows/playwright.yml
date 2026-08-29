@@ -88,16 +88,26 @@ jobs:
             echo "::warning::No grid_host set — Playwright will launch a LOCAL browser. A green run proves nothing about the grid."
           fi
 
+      # Configures the grid and exports GRID_URL / GRID_HOST / AUTH_TOKEN /
+      # RA_TESTSUITE for the steps below, and fails the job on an empty token.
+      # Skipped when no grid is set — a blank host is the documented way to run
+      # a local browser, and the action always configures a grid.
+      - name: Configure the RobotActions grid
+        if: ${{ inputs.grid_host != '' || secrets.RA_GRID_HOST != '' }}
+        uses: RobotActions/robotactions-action@v0.2.0
+        with:
+          api-token: ${{ secrets.RA_AUTH_TOKEN }}
+          grid-url: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          test-suite: ${{ github.workflow }} · ${{ inputs.suite }} · run ${{ github.run_number }}
+          release-id: ${{ github.sha }}
+
       - name: Run tests
         env:
           SUITE: ${{ inputs.suite }}
           GREP: ${{ inputs.grep }}
-          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
           PLAYWRIGHT_MODE: ${{ inputs.playwright_mode }}
           WORKERS: ${{ inputs.workers }}
-          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
           BASE_URL: ${{ vars.BASE_URL }}
-          RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.suite }} · run ${{ github.run_number }}
         run: |
           if [ "$SUITE" = "regular" ]; then
             npx playwright test --config=playwright.regular.config.ts --reporter=line

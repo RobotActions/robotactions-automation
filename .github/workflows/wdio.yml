@@ -74,24 +74,28 @@ jobs:
           echo "grid      : $GRID_HOST"
           echo "instances : $MAX_INSTANCES"
 
-      - name: Fail fast if the auth token is missing
-        env:
-          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
-        run: |
-          if [ -z "$AUTH_TOKEN" ]; then
-            echo "::error::secrets.RA_AUTH_TOKEN is not set — every session would 401." >&2
-            exit 1
-          fi
+      # Configures the grid connection and exports GRID_HOST / AUTH_TOKEN /
+      # RA_TESTSUITE for the steps below. It also fails the job when the token
+      # is empty, which is why there is no hand-written check here any more.
+      #
+      # Skipped when no grid host is set: a blank host is the documented way to
+      # run against a local browser instead, and the action always configures a
+      # grid.
+      - name: Configure the RobotActions grid
+        if: ${{ inputs.grid_host != '' || secrets.RA_GRID_HOST != '' }}
+        uses: RobotActions/robotactions-action@v0.2.0
+        with:
+          api-token: ${{ secrets.RA_AUTH_TOKEN }}
+          grid-url: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          test-suite: ${{ github.workflow }} · ${{ inputs.config }} · run ${{ github.run_number }}
+          release-id: ${{ github.sha }}
 
       - name: Run WDIO
         env:
           CONFIG: ${{ inputs.config }}
           TAGS: ${{ inputs.tag_expression }}
-          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
           MAX_INSTANCES: ${{ inputs.max_instances }}
-          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
           BASE_URL: ${{ vars.BASE_URL }}
-          RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.config }} · run ${{ github.run_number }}
         run: |
           args=(run "$CONFIG")
           # Mocha has no tag expression; only pass it for the Cucumber configs.

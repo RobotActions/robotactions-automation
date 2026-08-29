@@ -82,6 +82,19 @@ jobs:
       # re-derived from this YAML. It owns suite selection, the local-browser
       # guard, the Playwright client/server version check and the zero-test
       # guard; the step below only supplies inputs.
+      # Configures the grid and exports GRID_HOST / AUTH_TOKEN / RA_TESTSUITE
+      # for the steps below, and fails the job on an empty token. Skipped when
+      # no grid is set — a blank host is the documented way to run a local
+      # browser, and the action always configures a grid.
+      - name: Configure the RobotActions grid
+        if: ${{ inputs.grid_host != '' || secrets.RA_GRID_HOST != '' }}
+        uses: RobotActions/robotactions-action@v0.2.0
+        with:
+          api-token: ${{ secrets.RA_AUTH_TOKEN }}
+          grid-url: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
+          test-suite: ${{ github.workflow }} · ${{ inputs.suite }} · run ${{ github.run_number }}
+          release-id: ${{ github.sha }}
+
       - name: Run tests
         env:
           # Inputs go through env and are quoted at the call site — never
@@ -89,8 +102,6 @@ jobs:
           # shape (same rule as the "Show run configuration" step above).
           SUITE: ${{ inputs.suite }}
           MARKERS: ${{ inputs.markers }}
-          GRID_HOST: ${{ inputs.grid_host != '' && inputs.grid_host || secrets.RA_GRID_HOST }}
-          AUTH_TOKEN: ${{ secrets.RA_AUTH_TOKEN }}
           BASE_URL: ${{ vars.BASE_URL }}
           RA_TESTSUITE: ${{ github.workflow }} · ${{ inputs.suite }} · run ${{ github.run_number }}
           # Blank grid_host is an explicit request for a local browser; without
