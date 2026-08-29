@@ -38,11 +38,6 @@ const iosCap = {
     'appium:automationName': 'xcuitest',
     'appium:noReset': true,
     'appium:newCommandTimeout': 120,
-    // IOS_MANAGED_RUNNER=true lets the grid manage the iOS automation runner for
-    // the session and tear it down afterwards. This is the working path here.
-    ...(process.env.IOS_MANAGED_RUNNER === 'true'
-        ? { 'ra:iosManagedWda': true, 'ra:liveVideo': false }
-        : {}),
     ...RA_CAPS,
 };
 

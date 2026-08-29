@@ -60,11 +60,6 @@ const iosCapability = {
     // Optional: attach to a runner you launched yourself, so Appium neither
     // builds one nor manages its own connection.
     ...(process.env.IOS_RUNNER_URL ? { 'appium:webDriverAgentUrl': process.env.IOS_RUNNER_URL } : {}),
-    // Let the grid manage the iOS automation runner for the session and tear
-    // it down afterwards, instead of managing one yourself.
-    ...(process.env.IOS_MANAGED_RUNNER === 'true'
-        ? { 'ra:iosManagedWda': true, 'ra:liveVideo': false }
-        : {}),
 };
 
 const activeCapability = platform === 'ios' ? iosCapability : androidCapability;
