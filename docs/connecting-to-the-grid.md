@@ -123,6 +123,73 @@ your grid serves, and bump the two together.
 
 ---
 
+## ACCELQ — codeless, via the Local agent
+
+ACCELQ runs its codeless tests through Appium, and its agent's **Local** provider takes an
+`appium_url` pointing at any Appium server. That is the whole integration. RobotActions is
+not in ACCELQ's built-in cloud-provider dropdown and does not need to be.
+
+Two properties on the ACCELQ agent:
+
+```properties
+mobile_provider_type=Local
+appium_url={{GRID_URL}}/t/{{AUTH_TOKEN}}
+```
+
+Set them in the Agent Command Center (Configuration -> Edit Configuration), or from the CLI:
+
+```bash
+acc properties --agent <name> --set mobile_provider_type=Local
+acc properties --agent <name> --set appium_url={{GRID_URL}}/t/{{AUTH_TOKEN}}
+```
+
+**The token lives in that one field, and that is the point.** ACCELQ's credential inputs —
+username, access key, security token — are wired per named provider, and the Local path
+exposes `appium_url` and nothing else. Because the grid authenticates on the URL path rather
+than an `Authorization` header (see [Auth in one line](#auth-in-one-line)), that single field
+carries the endpoint and the credentials together.
+
+### Capabilities
+
+In the ACCELQ mobile driver profile, Appium capabilities go at the **root level**.
+`cloudOptions` exists for the named providers' own capabilities and stays empty here.
+
+```json
+{
+  "platformName": "Android",
+  "appium:automationName": "UiAutomator2",
+  "appium:app": "https://builds.example.com/latest/app-debug.apk"
+}
+```
+
+- **`appium:app` takes an https URL** and the build installs before the session starts.
+  There is no upload step and no vendor URL scheme to learn — the `bs://`, `lt://` and
+  `storage:<file_id>` conventions ACCELQ documents per provider have no equivalent here.
+- **`appium:udid` is optional.** Omit it and the grid hands the session a free handset on the
+  platform you asked for. Send it when a test has to pin to one device.
+- iOS is the same shape: `"platformName": "iOS"` with `"appium:automationName": "XCUITest"`.
+
+The rest of this page still applies. [`ra:` reporting
+capabilities](#reporting-passfail-back-to-the-dashboard) put a name and a verdict on the run
+in the dashboard, and `ra:networkCapture` records the request waterfall.
+
+### What this covers, and what it does not
+
+**Execution.** ACCELQ's View Capture has its own Cloud Provider picker listing the six named
+providers, so authoring is expected to still want a local device or one of those clouds even
+while execution runs against the grid. Capture where you capture today; run against the grid.
+
+Two agent properties matter more than usual once the Appium server is remote rather than
+`localhost:4723`: leave `ssl_cert_verification` on, and fill in the proxy settings if the
+agent machine reaches the internet through a proxy.
+
+> The grid side of this is ordinary Appium, exercised by every template in this repo. The
+> composition with ACCELQ follows their documented `appium_url` behaviour but has not been
+> verified end to end here yet. If you hit something this page does not cover, tell us and
+> the page gets fixed.
+
+---
+
 ## Reporting pass/fail back to the dashboard
 
 Runs show up in the dashboard automatically, but they're far more useful with a name and a
@@ -191,6 +258,7 @@ and anything still in flight when the session ended.
 | Browser tests, prefer the Playwright API | Playwright (direct WS) |
 | Mobile tests you're writing now | Appium (`UiAutomator2` / `XCUITest`) |
 | Compiled native suites you don't want to rewrite | Native runner — ask us, it takes your built bundle as-is |
+| A codeless platform you already run (ACCELQ) | Its Local agent, pointed at the grid — see [ACCELQ](#accelq--codeless-via-the-local-agent) |
 
 ---
 
@@ -203,3 +271,5 @@ and anything still in flight when the session ended.
 | Session succeeds but the page is an error page | DNS or egress from wherever the browser runs — check the page body, not the status code. WebDriver returns 200s through a failed navigation. |
 | Tests pass locally, nothing appears in the dashboard | The suite launched a **local** browser because the grid URL was unset. Every template fails the run instead of passing quietly; check your `.env` or CI secrets. |
 | `0 tests ran` but the job is green | A marker/tag expression matched nothing. The templates' `ci.sh` catches this and fails. |
+| ACCELQ runs on a local emulator instead of the grid | `mobile_provider_type` is not `Local`, or `appium_url` still points at `localhost:4723`. Both have to change. |
+| ACCELQ connects but every session is `401` | The token is missing from `appium_url`. It belongs in the path — `{{GRID_URL}}/t/{{AUTH_TOKEN}}` — not in a capability. |
