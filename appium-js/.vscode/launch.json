@@ -1,0 +1,46 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The WebdriverIO extension debugs a single scenario from the Testing
+      // view. These are the whole-config fallbacks. autoAttachChildProcesses
+      // matters: @wdio/local-runner executes specs in worker processes, so
+      // without it breakpoints in step-definitions/ are never hit.
+      "name": "Appium: debug mobile (cucumber)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@wdio/cli/bin/wdio.js",
+      "args": ["run", "${workspaceFolder}/wdio.conf.ts"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Appium: debug mobile (mocha specs)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@wdio/cli/bin/wdio.js",
+      "args": ["run", "${workspaceFolder}/wdio.mocha.conf.ts"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      // Device-level native smoke — no app under test.
+      "name": "Appium: debug grid smoke",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@wdio/cli/bin/wdio.js",
+      "args": ["run", "${workspaceFolder}/wdio.grid-smoke.conf.ts"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

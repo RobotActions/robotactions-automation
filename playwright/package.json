@@ -12,6 +12,7 @@
     "report:monocart": "open test-results/monocart-report/index.html",
     "report:junit": "cat test-results/junit.xml",
     "bddgen": "npx bddgen",
+    "bddgen:watch": "node scripts/watch-bdd.mjs",
     "bddgen:export": "npx bddgen export"
   },
   "devDependencies": {

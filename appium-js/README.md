@@ -77,6 +77,36 @@ All device and server settings are controlled via environment variables (set in 
 | `npm run test:regular` | Run Mocha specs in `test/specs/`   |
 | `npm run test:debug` | Run with Node inspector attached     |
 
+## VS Code
+
+**Before the editor is useful, run `npm install` in this folder.** Node globals
+(`process`, `require`) come from `@types/node`, a devDependency pinned in
+`package-lock.json`. Until it is on disk TypeScript reports *"Cannot find name
+'process'. Do you need to install type definitions for node?"* on every config and
+step file, and the Testing view stays empty because the extensions cannot load the
+run configs either.
+
+Open this folder directly (not the repository root) so the extensions below bind to this
+project's `node_modules` and configs. VS Code offers the recommended extensions on first
+open — `.vscode/extensions.json` lists them:
+
+| Extension | What it gives you |
+|-----------|-------------------|
+| `WebdriverIO.vscode-webdriverio` | Configs, features and scenarios in the Testing view; run/debug one scenario |
+| `CucumberOpen.cucumber-official` | Step autocomplete and go-to-definition inside `.feature` files |
+
+`webdriverio.configFilePattern` in `.vscode/settings.json` is scoped to this folder, so the
+Testing view shows the three configs here: the Cucumber suite, the Mocha specs, and the
+device-level grid smoke. Environment comes from `.env` via `webdriverio.envFiles`
+(`PLATFORM`, `GRID_HOST`, `AUTH_TOKEN`, slot counts); `overrideEnv` is left `false` so a
+token exported in the shell still wins over the checked-out file.
+
+A run still needs a reachable device — the extension only replaces the command line, not
+the Appium server or grid connection described below. Debugging a whole config is in
+`.vscode/launch.json`; `autoAttachChildProcesses` is on, without which breakpoints in
+`step-definitions/` never fire, because the local runner executes specs in worker
+processes.
+
 ## Android Setup
 
 1. Start an emulator or connect a physical device

@@ -8,6 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "allowJs": true,
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
@@ -15,6 +16,6 @@
       "@steps/*": ["./steps/*"]
     }
   },
-  "include": ["**/*.ts", "playwright.config.ts"],
-  "exclude": ["node_modules", "dist", ".features-gen"]
+  "include": ["**/*.ts", "playwright.config.ts", "traceit.js"],
+  "exclude": ["node_modules", "dist", ".features-gen", "scripts"]
 }

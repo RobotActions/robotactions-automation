@@ -1,0 +1,9 @@
+{
+  // Test Explorer for WebdriverIO comes from the official extension: it finds
+  // every wdio config in this folder and drives runs through vscode's
+  // TestController API. Cucumber support covers .feature authoring.
+  "recommendations": [
+    "WebdriverIO.vscode-webdriverio",
+    "CucumberOpen.cucumber-official"
+  ]
+}

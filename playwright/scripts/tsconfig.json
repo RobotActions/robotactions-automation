@@ -1,0 +1,18 @@
+{
+  // scripts/ is ESM (.mjs) while the template itself compiles as CommonJS, so
+  // it gets its own project. Without one these files land in VS Code's
+  // inferred project, where `process` resolves to nothing and the editor asks
+  // you to install @types/node that is already in devDependencies.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.mjs"]
+}

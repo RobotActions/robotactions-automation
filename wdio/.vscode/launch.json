@@ -1,0 +1,70 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The WebdriverIO extension debugs a single scenario from the Testing
+      // view. These are the whole-config fallbacks. autoAttachChildProcesses
+      // matters: @wdio/local-runner executes specs in worker processes, so
+      // without it breakpoints in step-definitions/ are never hit.
+      "name": "WDIO: debug web (cucumber)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@wdio/cli/bin/wdio.js",
+      "args": ["run", "${workspaceFolder}/wdio.conf.ts"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "WDIO: debug web (mocha specs)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@wdio/cli/bin/wdio.js",
+      "args": ["run", "${workspaceFolder}/wdio.mocha.conf.ts"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      // Any other config in this folder, chosen at launch time.
+      "name": "WDIO: debug chosen config",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@wdio/cli/bin/wdio.js",
+      "args": ["run", "${workspaceFolder}/${input:wdioConfig}"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "wdioConfig",
+      "type": "pickString",
+      "description": "Which WebdriverIO config?",
+      "default": "wdio.conf.ts",
+      "options": [
+        "wdio.conf.ts",
+        "wdio.mocha.conf.ts",
+        "wdio.mobile.conf.ts",
+        "wdio.mobileweb.conf.ts",
+        "wdio.mobile-fleet.conf.ts",
+        "wdio.ios.conf.ts",
+        "wdio.ios-2.conf.ts",
+        "wdio.ios-mobileweb.conf.ts",
+        "wdio.android-2.conf.ts",
+        "wdio.fleet-222.conf.ts",
+        "wdio.service.conf.ts",
+        "wdio.mocha.service.conf.ts",
+        "wdio.mobileweb.service.conf.ts",
+        "wdio.ios-mobileweb.service.conf.ts"
+      ]
+    }
+  ]
+}

@@ -24,7 +24,8 @@
     "pageobjects/**/*.ts",
     "test/**/*.ts",
     "wdio.conf.ts",
-    "wdio.mocha.conf.ts"
+    "wdio.mocha.conf.ts",
+    "wdio.grid-smoke.conf.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }
