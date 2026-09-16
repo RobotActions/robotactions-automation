@@ -66,6 +66,21 @@ is what the templates are for.
 | `BASE_URL` | The application under test. |
 | `RA_TESTSUITE` | Suite label the grid stores against the session, so runs are identifiable in the dashboard. |
 
+### Editor support
+
+The three TypeScript templates ship VS Code configuration — recommended extensions,
+Testing-view wiring, debug configs — under their own `.vscode/`:
+
+| Template | Test Explorer via |
+|---|---|
+| `playwright` | `ms-playwright.playwright` (over the specs `bddgen` generates into `.features-gen/`) |
+| `wdio` | `WebdriverIO.vscode-webdriverio` |
+| `appium-js` | `WebdriverIO.vscode-webdriverio` |
+
+Open the template folder itself rather than this repository root — each one carries its own
+`node_modules`, `tsconfig.json` and runner configs, and the extensions bind to the folder
+they are opened in. Details are in each template's README.
+
 ### Use the documented endpoint
 
 Connect to the endpoint your dashboard gives you — `:5555` for a local grid, `443` for

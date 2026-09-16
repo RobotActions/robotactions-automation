@@ -1,0 +1,35 @@
+{
+  // --- WebdriverIO Test Explorer ------------------------------------------
+  // Scoped to this folder's own configs. The extension's default pattern is a
+  // recursive '**/*wdio*.conf*' sweep, which in a workspace with several
+  // templates checked out surfaces every sibling project's runs in one tree.
+  "webdriverio.configFilePattern": [
+    "wdio.conf.ts",
+    "wdio.*.conf.ts"
+  ],
+  // .env carries GRID_HOST / AUTH_TOKEN / RA_TESTSUITE. Left at overrideEnv
+  // false so a shell that already exports a token (CI, a scratch run) still
+  // wins over the checked-out file.
+  "webdriverio.envFiles": [".env"],
+  "webdriverio.overrideEnv": false,
+  "webdriverio.showOutput": true,
+
+  // --- Cucumber language support (.feature files) -------------------------
+  // Step definitions live in step-definitions/, which the extension's default
+  // glue globs do not cover — without this every step reads as undefined.
+  "cucumber.features": [
+    "features/**/*.feature"
+  ],
+  "cucumber.glue": [
+    "step-definitions/**/*.ts",
+    "pageobjects/**/*.ts"
+  ],
+
+  "search.exclude": {
+    "**/test-results": true,
+    "**/allure-results": true,
+    "**/allure-report": true
+  },
+
+  "typescript.tsdk": "node_modules/typescript/lib"
+}

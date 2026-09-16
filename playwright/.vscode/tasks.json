@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Regenerate .features-gen once. Bound to Cmd/Ctrl+Shift+B.
+      "label": "bddgen",
+      "type": "shell",
+      "command": "npx bddgen",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "dedicated", "clear": true }
+    },
+    {
+      // Keeps the generated specs in step with features/ and steps/ so the
+      // Testing view reflects what you just typed. Starts with the folder —
+      // VS Code asks once to allow automatic tasks; answer Allow.
+      "label": "bddgen: watch",
+      "type": "shell",
+      "command": "node scripts/watch-bdd.mjs",
+      "isBackground": true,
+      "problemMatcher": [],
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "never", "panel": "dedicated" }
+    }
+  ]
+}

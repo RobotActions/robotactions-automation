@@ -43,6 +43,36 @@ npm test
 Filter by tag with `--cucumberOpts.tagExpression='@smoke'` (quote the whole expression;
 `'@smoke and not @wip'` also works).
 
+## VS Code
+
+**Before the editor is useful, run `npm install` in this folder.** Node globals
+(`process`, `require`) come from `@types/node`, a devDependency pinned in
+`package-lock.json`. Until it is on disk TypeScript reports *"Cannot find name
+'process'. Do you need to install type definitions for node?"* on every config and
+step file, and the Testing view stays empty because the extensions cannot load the
+run configs either.
+
+Open this folder directly (not the repository root) so the extensions below bind to this
+project's `node_modules` and configs. VS Code offers the recommended extensions on first
+open — `.vscode/extensions.json` lists them:
+
+| Extension | What it gives you |
+|-----------|-------------------|
+| `WebdriverIO.vscode-webdriverio` | Configs, features and scenarios in the Testing view; run/debug one scenario |
+| `CucumberOpen.cucumber-official` | Step autocomplete and go-to-definition inside `.feature` files |
+
+`webdriverio.configFilePattern` in `.vscode/settings.json` is scoped to this folder's
+`wdio.conf.ts` / `wdio.*.conf.ts`, so the Testing view shows one tree per config —
+desktop, mobile web, iOS, the service variants. Narrow the list there if you only ever run
+one of them. Environment comes from `.env` via `webdriverio.envFiles`; `overrideEnv` is
+left `false` so a token exported in the shell still wins over the checked-out file.
+
+Requires the extension's own baseline: VS Code 1.96+, Node 18+, WebdriverIO v9 (this
+template is on v9). Debugging a whole config instead of a single scenario is in
+`.vscode/launch.json` — `autoAttachChildProcesses` is on, without which breakpoints in
+`step-definitions/` never fire, because the local runner executes specs in worker
+processes.
+
 ## Mobile web
 
 The same feature file runs on both platforms; only the config differs. Things that are easy

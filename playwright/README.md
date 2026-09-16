@@ -40,6 +40,41 @@ npm test
 | `npm run test:headed` | Run BDD tests in headed browser |
 | `npm run test:debug` | Run BDD tests with Playwright Inspector |
 | `npm run report` | Open HTML test report |
+| `npm run bddgen` / `npm run bddgen:watch` | Regenerate `.features-gen` once / on every change (VS Code Testing view) |
+
+## VS Code
+
+**Before the editor is useful, run `npm install` in this folder.** Node globals
+(`process`, `require`) come from `@types/node`, a devDependency pinned in
+`package-lock.json`. Until it is on disk TypeScript reports *"Cannot find name
+'process'. Do you need to install type definitions for node?"* on every config and
+step file, and the Testing view stays empty because the extensions cannot load the
+run configs either.
+
+Open this folder directly (not the repository root) so the extensions below bind to this
+project's `node_modules` and configs. VS Code offers the recommended extensions on first
+open — `.vscode/extensions.json` lists them:
+
+| Extension | What it gives you |
+|-----------|-------------------|
+| `ms-playwright.playwright` | Scenarios in the Testing view; run/debug a single scenario; breakpoints in steps |
+| `CucumberOpen.cucumber-official` | Step autocomplete and go-to-definition inside `.feature` files |
+
+The Testing view lists what `playwright.config.ts` points at, and for playwright-bdd that
+is the **generated** `.features-gen/` directory — not `features/`. So the generated specs
+have to exist and stay current:
+
+- `.vscode/tasks.json` starts `bddgen: watch` when the folder opens (VS Code asks once to
+  allow automatic tasks — answer **Allow**). It regenerates on every save under
+  `features/` or `steps/`, so the Testing view tracks what you just typed.
+- Run it by hand any time with `npm run bddgen:watch`, or regenerate once with
+  Cmd/Ctrl+Shift+B (the default build task) or `npm run bddgen`.
+- If a new scenario does not appear, hit **Refresh Tests** in the Testing view.
+
+Grid target and auth are not duplicated in the editor config: the extension runs Playwright
+with this folder as the working directory, and `config.ts` loads `.env` (`GRID_HOST`,
+`AUTH_TOKEN`, `BASE_URL`). Per-machine overrides go in `playwright.env` in your own
+settings. `F5` runs the whole suite under the debugger — see `.vscode/launch.json`.
 
 ## Remote Grid Execution
 
