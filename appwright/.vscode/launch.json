@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // The Playwright extension debugs individual scenarios straight from the
+      // Testing view; this is the whole-suite fallback (and what you want when
+      // stepping through steps/fixtures.ts or providers/robotactions.ts).
+      "name": "Appwright: debug BDD suite",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test", "--workers=1", "--grep-invert", "@app|@settings"],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "bddgen",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Appwright: debug regular specs",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+      "args": ["test", "--config=playwright.regular.config.ts", "--workers=1"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

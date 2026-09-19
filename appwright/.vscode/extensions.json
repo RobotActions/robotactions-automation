@@ -1,0 +1,10 @@
+{
+  // Test Explorer for this template comes from the official Playwright
+  // extension: Appwright runs on Playwright's runner, so the extension loads
+  // appwright.config.ts and lists whatever lives under its testDir — here the
+  // specs playwright-bdd generates into .features-gen.
+  "recommendations": [
+    "ms-playwright.playwright",
+    "CucumberOpen.cucumber-official"
+  ]
+}

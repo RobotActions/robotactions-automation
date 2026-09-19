@@ -38,6 +38,7 @@ RobotActions toolchain:
 | [`selenium-python`](selenium-python) | Selenium + pytest-bdd | Grid browsers, mobile web, real devices |
 | [`wdio`](wdio) | WebdriverIO + TypeScript | Grid browsers, mobile web, real devices |
 | [`appium-js`](appium-js) | Appium + WebdriverIO | Real Android / iOS devices |
+| [`appwright`](appwright) | Appwright (Playwright runner + Appium) | Real Android / iOS devices |
 | [`selenium-java`](selenium-java) | Selenium + Appium + Cucumber-JVM (Java 17) | Grid browsers, mobile web, real devices |
 | [`espresso`](espresso) | Native Android instrumented tests (Espresso) | Real Android devices, on-device via the native runner |
 | [`xctest`](xctest) | Native iOS UI tests (XCUITest) | Real iOS devices, on-device via the native runner |
@@ -68,7 +69,7 @@ is what the templates are for.
 
 ### Editor support
 
-The three TypeScript templates ship VS Code configuration — recommended extensions,
+The four TypeScript templates ship VS Code configuration — recommended extensions,
 Testing-view wiring, debug configs — under their own `.vscode/`:
 
 | Template | Test Explorer via |
@@ -76,6 +77,7 @@ Testing-view wiring, debug configs — under their own `.vscode/`:
 | `playwright` | `ms-playwright.playwright` (over the specs `bddgen` generates into `.features-gen/`) |
 | `wdio` | `WebdriverIO.vscode-webdriverio` |
 | `appium-js` | `WebdriverIO.vscode-webdriverio` |
+| `appwright` | `ms-playwright.playwright` (over the specs `bddgen` generates into `.features-gen/`) |
 
 Open the template folder itself rather than this repository root — each one carries its own
 `node_modules`, `tsconfig.json` and runner configs, and the extensions bind to the folder

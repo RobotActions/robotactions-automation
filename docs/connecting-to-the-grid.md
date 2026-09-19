@@ -79,6 +79,62 @@ Templates: [`appium-js`](../appium-js), [`wdio`](../wdio).
 
 ---
 
+## Appwright — the Playwright API over Appium
+
+[Appwright](https://github.com/empirical-run/appwright) cannot be pointed at a grid by
+configuration, and no amount of `.env` will change that: it picks a device provider from a
+hardcoded `switch` over `browserstack`, `lambdatest`, `emulator` and `local-device`, with no
+registry to add a fifth to. `local-device` is not a way in either — it spawns its own Appium
+on `localhost:4723` and shells out to `adb` / Xcode on the machine running the tests.
+
+What it does export is `Device`, the class behind every `device.getByText(...).tap()` call,
+and that takes a plain WebDriver client. So build the session yourself and wrap it:
+
+```ts
+import { Device } from 'appwright';
+
+const WebDriver = (await import('webdriver')).default;
+const client = await WebDriver.newSession({
+    protocol: 'http',                       // 'https' for the hosted endpoint
+    hostname: '{{GRID_HOST}}'.split(':')[0],
+    port: 5555,
+    path: `/t/{{AUTH_TOKEN}}/wd/hub`,       // auth on the path, as everywhere else
+    capabilities: {
+        platformName: 'Android',
+        'appium:automationName': 'UiAutomator2',
+        'appium:app': 'https://example.com/builds/app-debug.apk',
+        // Appwright's locators walk the UI tree, and iOS truncates a snapshot at
+        // depth 50 by default — deep hierarchies then look empty and getByText
+        // finds nothing that is plainly on screen. Every Appwright provider
+        // raises this.
+        'appium:settings[snapshotMaxDepth]': 62,
+    },
+});
+
+const device = new Device(client, 'com.mycompany.myapp', { expectTimeout: 20_000 }, 'robotactions');
+```
+
+Expose that through a Playwright fixture and the whole Appwright API works unchanged,
+because it is the real `Device` — nothing is patched or forked. Two things to know:
+
+- **`device.setMockCameraView()` becomes a no-op.** It is implemented with BrowserStack's
+  and LambdaTest's own image-injection executors and branches on the provider name. The rest
+  of `Device` is plain WebDriver.
+- **Drive Playwright's runner directly** (`npx playwright test`). Appwright's `defineConfig`
+  injects a global setup that resolves the provider name through that same `switch` — so it
+  rejects a grid outright — plus a video reporter that downloads recordings from BrowserStack.
+  Its CLI is only a shim over `npx playwright test --config appwright.config.ts`.
+
+One more, worth knowing before it ends up in a CI log: `@wdio/utils` logs the endpoint it is
+connecting to at info level, and with auth on the path that line **contains your token**.
+A `logLevel` on the session does not suppress it — `newSession` applies that to the
+`webdriver` logger, while the line belongs to `@wdio/utils`. Set `WDIO_LOG_LEVEL=warn`
+before `webdriver` is imported (levels are read when each logger is created).
+
+Template: [`appwright`](../appwright).
+
+---
+
 ## Playwright — browsers
 
 Playwright is the exception to the path-prefix rule, and it has two modes.
@@ -257,6 +313,7 @@ and anything still in flight when the session ended.
 | Browser tests, any language | Selenium |
 | Browser tests, prefer the Playwright API | Playwright (direct WS) |
 | Mobile tests you're writing now | Appium (`UiAutomator2` / `XCUITest`) |
+| Mobile tests, prefer the Playwright API | Appwright, wrapping a grid session in its `Device` — see above |
 | Compiled native suites you don't want to rewrite | Native runner — ask us, it takes your built bundle as-is |
 | A codeless platform you already run (ACCELQ) | Its Local agent, pointed at the grid — see [ACCELQ](#accelq--codeless-via-the-local-agent) |
 
