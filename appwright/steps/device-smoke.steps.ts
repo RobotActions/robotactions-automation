@@ -17,7 +17,7 @@ Given('an automation session is live on a device', async ({ device }) => {
     expect(['android', 'ios']).toContain(device.getPlatform());
 });
 
-Then('the session runs on the requested platform', async ({ device, platform }) => {
+Then('the session runs on the requested platform', async ({ device, gridPlatform: platform }) => {
     // Worth asserting rather than assuming: with no DEVICE_UDID pinned the grid
     // chooses the device, and a platform mismatch would otherwise surface much
     // later as locators that never match anything.

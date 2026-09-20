@@ -21,7 +21,7 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
-    "appwright": "^0.1.45",
+    "appwright": "github:RobotActions/appwright#feat/provider-grid-parity",
     "webdriver": "^8.36.1"
   }
 }

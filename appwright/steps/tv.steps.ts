@@ -8,7 +8,7 @@ import { isTv } from '../config';
  * phone — so only the input side needs its own steps.
  */
 
-Before('@tv', async ({ platform }) => {
+Before('@tv', async ({ gridPlatform: platform }) => {
     test.skip(
         !isTv(platform),
         'TV-only. Run with PLATFORM=tvos (Apple TV) or PLATFORM=androidtv (Android TV / Chromecast).',

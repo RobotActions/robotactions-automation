@@ -4,7 +4,7 @@
     {
       // The Playwright extension debugs individual scenarios straight from the
       // Testing view; this is the whole-suite fallback (and what you want when
-      // stepping through steps/fixtures.ts or providers/robotactions.ts).
+      // stepping through steps/fixtures.ts or remote.ts).
       "name": "Appwright: debug BDD suite",
       "type": "node",
       "request": "launch",

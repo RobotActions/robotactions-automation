@@ -1,8 +1,7 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from 'appwright';
 import {
-    describeTarget, expectTimeout, forbidOnly, platforms, retries, testTimeout, workers,
-    type GridDeviceOptions,
+    describeTarget, expectTimeout, forbidOnly, gridProject, platforms, retries, testTimeout, workers,
 } from './config';
 
 /**
@@ -15,7 +14,7 @@ import {
  */
 console.log(`[appwright:regular] target: ${describeTarget()}`);
 
-export default defineConfig<GridDeviceOptions>({
+export default defineConfig({
     testDir: './tests',
     testMatch: '**/*.spec.ts',
     fullyParallel: true,
@@ -34,8 +33,5 @@ export default defineConfig<GridDeviceOptions>({
     use: {
         expectTimeout: expectTimeout(),
     },
-    projects: platforms().map((platform) => ({
-        name: platform,
-        use: { platform },
-    })),
+    projects: platforms().map(gridProject),
 });

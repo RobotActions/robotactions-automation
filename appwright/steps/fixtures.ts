@@ -1,9 +1,14 @@
 /**
  * The test object every spec and step definition imports.
  *
- * It is `playwright-bdd`'s test (itself Playwright's, extended) plus the grid
- * fixtures. BDD steps and plain specs therefore share one device lifecycle, and
- * the Appwright API is the real thing rather than a wrapper:
+ * Three things merged into one `test`:
+ *   - Appwright's own — its `device` fixture, driven by the `robotactions`
+ *     provider from the RobotActions fork of Appwright (github:RobotActions/
+ *     appwright); the grid session, name/verdict sync and video attachment
+ *     all live there,
+ *   - playwright-bdd's, so Gherkin steps get the same fixtures,
+ *   - this template's `remote` (TV buttons) and a `device` wrapper that
+ *     attaches a screenshot when a test fails.
  *
  *     await device.getByText('Sign in').tap();
  *     await expect(device.getById('welcome')).toBeVisible();
@@ -11,84 +16,37 @@
  * Fixtures:
  *   `device`         — an Appwright `Device` on a grid session
  *   `remote`         — hardware buttons for that same session (required on tvOS)
- *   `deviceProvider` — the session owner, if a test needs the grid session id
+ *   `deviceProvider` — the session owner: `sessionId`, and `client` for raw WebDriver
+ *   `gridPlatform`   — this template's platform name (`androidtv`, `tvos`, …)
  */
-import { test as base, createBdd } from 'playwright-bdd';
-import type { ActionOptions, AppwrightLocator, Device } from 'appwright';
-import { RobotActionsDeviceProvider } from '../providers/robotactions';
-import { createRemote, type Remote } from '../remote';
-import {
-    appActivity, appBundleId, buildPath, defaultPlatform, deviceUdid, expectTimeout,
-    type GridDeviceOptions,
-} from '../config';
+import { mergeTests } from '@playwright/test';
+import { test as bdd, createBdd } from 'playwright-bdd';
+import { test as appwright, type ActionOptions, type AppwrightLocator } from 'appwright';
+import { createRemote, type Remote, type RemoteSession } from '../remote';
+import { defaultPlatform, type GridOptions } from '../config';
 
-type GridFixtures = {
-    deviceProvider: RobotActionsDeviceProvider;
-    device: Device;
-    remote: Remote;
-};
-
-export const test = base.extend<GridDeviceOptions & GridFixtures>({
-    // Options — overridable per project in playwright.config.ts, and per file
-    // with `test.use({ platform: 'ios' })`. Defaults come from the environment
-    // so a run is configured in one place (.env) rather than in each spec.
-    platform: [defaultPlatform(), { option: true }],
-    udid: [deviceUdid(), { option: true }],
-    buildPath: [buildPath(), { option: true }],
-    appBundleId: [appBundleId(), { option: true }],
-    appActivity: [appActivity(), { option: true }],
-    expectTimeout: [expectTimeout(), { option: true }],
+export const test = mergeTests(appwright, bdd).extend<GridOptions & { remote: Remote }>({
+    // Set per project by config.ts → gridProject(); the default lets a spec run
+    // outside the project list (e.g. from the VS Code Testing view).
+    gridPlatform: [defaultPlatform(), { option: true }],
 
     /**
-     * Owns the grid session.
+     * Appwright's `device`, plus evidence on failure.
      *
-     * Separate from `device` so that `device` and `remote` are two views of one
-     * session rather than two sessions: both depend on this, and Playwright
-     * builds it once per test.
+     * Runs inside the base fixture: the screenshot is taken after the test
+     * body and before Appwright closes the session and reports its verdict, so
+     * the session is still alive for it. The dashboard name gets the platform
+     * suffix here for the same reason — Appwright sends the bare title.
      */
-    deviceProvider: async (
-        { platform, udid, buildPath: build, appBundleId: bundleId, appActivity: activity, expectTimeout: timeout },
-        use,
-        testInfo,
-    ) => {
-        await use(new RobotActionsDeviceProvider({
-            platform,
-            udid,
-            buildPath: build,
-            appBundleId: bundleId,
-            appActivity: activity,
-            expectTimeout: timeout,
-            testName: testInfo.title,
-            // Playwright's own stable per-test id — same value on every run, so
-            // the dashboard can trend one test rather than seeing a new one each
-            // time.
+    device: async ({ device, deviceProvider, gridPlatform }, use, testInfo) => {
+        await deviceProvider.syncTestDetails?.({
+            name: `${testInfo.title} [${gridPlatform}]`,
             testId: testInfo.testId,
-        }));
-    },
-
-    /**
-     * One Appium session per test, on a device the grid hands out.
-     *
-     * Per-test rather than per-worker: a session inherits whatever the previous
-     * test left on screen, and reusing one across tests makes failures depend on
-     * execution order. The cost is session setup per test, which is why
-     * `testTimeout()` is generous.
-     */
-    device: async ({ deviceProvider, platform }, use, testInfo) => {
-        const device = await deviceProvider.getDevice();
-
-        // Surfaces the grid session in the HTML report, so a failed test links
-        // back to the recording, logs and video the dashboard holds.
-        testInfo.annotations.push({ type: 'sessionId', description: deviceProvider.sessionId });
-        await deviceProvider.syncTestDetails({ name: `${testInfo.title} [${platform}]` });
+        });
 
         await use(device);
 
-        // Teardown order is deliberate: evidence and verdict both need a live
-        // session, so `device.close()` goes last.
-        const failed = testInfo.status !== testInfo.expectedStatus;
-
-        if (failed) {
+        if (testInfo.status !== testInfo.expectedStatus) {
             try {
                 const screenshot = await device.screenshot();
                 await testInfo.attach('device-screenshot', {
@@ -99,13 +57,6 @@ export const test = base.extend<GridDeviceOptions & GridFixtures>({
                 /* a dead session cannot be screenshotted — keep the real failure */
             }
         }
-
-        await deviceProvider.syncTestDetails({
-            status: testInfo.status,
-            reason: testInfo.error?.message,
-        });
-
-        await device.close();
     },
 
     /**
@@ -115,18 +66,17 @@ export const test = base.extend<GridDeviceOptions & GridFixtures>({
      * with the Siri Remote and then select, so taps have nothing to act on.
      * Depends on `device` so the session exists before a button is pressed.
      */
-    remote: async ({ deviceProvider, device }, use) => {
+    remote: async ({ deviceProvider, device, gridPlatform }, use) => {
         void device;
-        await use(createRemote(deviceProvider));
+        await use(createRemote(deviceProvider as RemoteSession, gridPlatform));
     },
 });
 
 /**
  * Playwright's `expect`, plus Appwright's `toBeVisible` for its locators.
  *
- * Appwright exports an `expect` of its own, but it is bound to Appwright's test
- * object (the one whose fixtures assume its built-in providers). This is the
- * same matcher over ours.
+ * Appwright exports an `expect` of its own, bound to its own test object; this
+ * is the same matcher over the merged one.
  */
 export const expect = test.expect.extend({
     toBeVisible: async (locator: AppwrightLocator, options?: ActionOptions) => {
