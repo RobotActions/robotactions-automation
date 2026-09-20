@@ -1,4 +1,5 @@
 import { Platform, type Device } from 'appwright';
+import { isApple } from '../config';
 import { Given, Then, expect } from './fixtures';
 
 /**
@@ -22,9 +23,11 @@ Then('the session runs on the requested platform', async ({ device, platform }) 
     // later as locators that never match anything.
     //
     // Compared against what Appwright *can* report, not against `platform`
-    // directly: `getPlatform()` is `isAndroid ? ANDROID : IOS`, so an Apple TV
-    // answers 'ios'. Asserting 'tvos' here would fail on a perfectly good session.
-    expect(device.getPlatform()).toBe(platform === 'android' ? 'android' : 'ios');
+    // directly: `getPlatform()` is `isAndroid ? ANDROID : IOS`, so the TV
+    // platforms collapse onto their phone counterpart — an Apple TV answers
+    // 'ios' and an Android TV answers 'android'. Asserting 'tvos' or 'androidtv'
+    // here would fail on a perfectly good session.
+    expect(device.getPlatform()).toBe(isApple(platform) ? 'ios' : 'android');
 });
 
 Then('a screenshot can be captured', async ({ device }) => {

@@ -1,4 +1,5 @@
 import { Platform, type Device } from 'appwright';
+import { isApple } from '../config';
 import { test, expect } from '../steps/fixtures';
 
 /**
@@ -10,8 +11,9 @@ import { test, expect } from '../steps/fixtures';
  */
 test.describe('Device automation smoke', () => {
     test('the session runs on the requested platform', async ({ device, platform }) => {
-        // Appwright reports tvOS as 'ios' — see steps/device-smoke.steps.ts.
-        expect(device.getPlatform()).toBe(platform === 'android' ? 'android' : 'ios');
+        // The TV platforms collapse onto their phone counterpart — see
+        // steps/device-smoke.steps.ts.
+        expect(device.getPlatform()).toBe(isApple(platform) ? 'ios' : 'android');
     });
 
     test('a screenshot can be captured', async ({ device }) => {

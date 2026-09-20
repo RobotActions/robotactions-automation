@@ -30,9 +30,9 @@
 import { Device, Platform, type DeviceProvider } from 'appwright';
 import type { Client as WebDriverClient } from 'webdriver';
 import {
-    appActivity, appBundleId, autoFailDetect, buildPath, deviceUdid, expectTimeout, fullReset, gridEndpoint,
-    iosRunnerBundleId, iosRunnerUrl, isApple, networkCapture, releaseId, suiteName,
-    usePreinstalledRunner, type PlatformName,
+    appActivity, appBundleId, autoFailDetect, buildPath, deviceClass, deviceUdid, expectTimeout,
+    fullReset, gridEndpoint, iosRunnerBundleId, iosRunnerUrl, isApple, isTv, networkCapture,
+    releaseId, suiteName, usePreinstalledRunner, type PlatformName,
 } from '../config';
 
 /**
@@ -89,7 +89,14 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
         return isApple(this.request.platform) ? Platform.IOS : Platform.ANDROID;
     }
 
-    /** The `platformName` capability the grid matches against. */
+    /**
+     * The `platformName` capability the grid matches against.
+     *
+     * Note `androidtv` is deliberately plain `Android`: an Android TV *is* Android
+     * as far as the driver and the grid are concerned. It is singled out by
+     * `appium:deviceClass` instead — see `deviceCaps()`. tvOS is the only one with
+     * a platform name of its own.
+     */
     private platformName(): string {
         switch (this.request.platform) {
             case 'tvos': return 'tvOS';
@@ -197,7 +204,7 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
             'appium:settings[snapshotMaxDepth]': SNAPSHOT_MAX_DEPTH,
             ...this.deviceCaps(udid),
             ...this.appCaps(app, bundleId, isAndroid),
-            ...(isAndroid ? {} : this.iosRunnerCaps()),
+            ...(isApple(this.request.platform) ? this.iosRunnerCaps() : {}),
             ...this.reportingCaps(),
         };
     }
@@ -211,7 +218,12 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
      * the capabilities in the request" — even when the UDID is perfectly valid.
      */
     private deviceCaps(udid: string | undefined): Capabilities {
-        return udid ? { 'appium:udid': udid } : {};
+        if (udid) return { 'appium:udid': udid };
+        // No udid: let the grid choose, but narrow it to the right kind of device.
+        // Without this an `androidtv` run would happily land on a phone, since an
+        // Android TV advertises platformName Android like everything else.
+        const wantedClass = deviceClass(this.request.platform);
+        return wantedClass ? { 'appium:deviceClass': wantedClass } : {};
     }
 
     /**
@@ -346,22 +358,31 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
     }
 
     /**
-     * Press a hardware button on the device.
+     * Press a remote-control key.
      *
-     * This exists because an Apple TV has no touchscreen: you move the focus
-     * ring with the Siri Remote and then select, so `tap()` — which is what most
-     * of Appwright's API is built on — has nothing to act on. Appwright's `Device`
-     * keeps its WebDriver client private and exposes no button command, hence
-     * going through the provider, which owns the same session.
+     * This exists because a TV has no touchscreen: you move a focus ring with the
+     * remote and then select, so `tap()` — which is what most of Appwright's API
+     * is built on — has nothing to act on. Appwright's `Device` keeps its
+     * WebDriver client private and exposes no key command, hence going through
+     * the provider, which owns the same session.
      *
-     * Valid tvOS names: Home, Menu, Up, Down, Left, Right, Select, Play/Pause.
-     * On iOS the XCUITest driver accepts home, volumeUp and volumeDown.
+     * The two TV platforms take entirely different wire commands for this, which
+     * is why callers use the neutral names in remote.ts rather than either of
+     * these vocabularies:
+     *
+     * - Apple TV — `mobile: pressButton` with a name (`Up`, `Select`, `Menu`…).
+     * - Android TV — an Android keycode (`DPAD_UP` = 19, `DPAD_CENTER` = 23…),
+     *   sent as `pressKeyCode`. There is no button-name form.
      */
-    async pressButton(name: string): Promise<void> {
+    async pressKey(key: { button: string; keycode: number }): Promise<void> {
         if (!this.client) {
-            throw new Error('pressButton called before the session was created.');
+            throw new Error('pressKey called before the session was created.');
         }
-        await this.client.executeScript('mobile: pressButton', [{ name }]);
+        if (isApple(this.request.platform)) {
+            await this.client.executeScript('mobile: pressButton', [{ name: key.button }]);
+        } else {
+            await this.client.pressKeyCode(key.keycode);
+        }
     }
 }
 
