@@ -27,6 +27,9 @@ export default defineConfig<GridDeviceOptions>({
         ['list'],
         ['html', { open: 'never' }],
         ['json', { outputFile: 'test-results/regular-results.json' }],
+        // Same machine-readable output as the BDD config, under its own name so
+        // the two suites' results do not overwrite each other in CI.
+        ['junit', { outputFile: 'test-results/regular-junit.xml' }],
     ],
     use: {
         expectTimeout: expectTimeout(),

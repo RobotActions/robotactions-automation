@@ -1,6 +1,6 @@
 // Environment is read only in ./config.ts — never process.env directly here.
 import { defineConfig } from '@playwright/test';
-import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
+import { defineBddConfig } from 'playwright-bdd';
 import {
     describeTarget, expectTimeout, forbidOnly, platforms, retries, testTimeout, workers,
     type GridDeviceOptions,
@@ -52,7 +52,11 @@ export default defineConfig<GridDeviceOptions>({
         ['html', { open: 'never' }],
         ['json', { outputFile: 'test-results/results.json' }],
         ['junit', { outputFile: 'test-results/junit.xml' }],
-        cucumberReporter('html', { outputFile: 'test-results/cucumber-report.html' }),
+        // No cucumberReporter() here on purpose. playwright-bdd 8.5.1 with
+        // Playwright 1.59 constructs it through getConfigDirFromEnv(), which
+        // bails out before the reporter is built — so it writes no file and
+        // prints no error. A reporter that silently produces nothing is worse
+        // than no reporter, so the three above (all verified to emit) are it.
     ],
     use: {
         expectTimeout: expectTimeout(),
