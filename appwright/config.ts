@@ -36,8 +36,20 @@ function bool(name: string, fallback: boolean): boolean {
 
 const LOOPBACK = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'];
 
-/** `android` / `ios` — the two platforms Appium drives. */
-export type PlatformName = 'android' | 'ios';
+/**
+ * The platforms Appium drives here.
+ *
+ * `tvos` is an Apple TV. It shares XCUITest and the WebDriverAgent runner with
+ * `ios`, so most of the wiring is identical — but there is no touchscreen, so
+ * interaction goes through the Siri Remote's focus engine instead of taps. See
+ * the `remote` fixture in steps/fixtures.ts.
+ */
+export type PlatformName = 'android' | 'ios' | 'tvos';
+
+/** True for the platforms driven by XCUITest (and therefore WebDriverAgent). */
+export function isApple(platform: PlatformName): boolean {
+    return platform === 'ios' || platform === 'tvos';
+}
 
 /**
  * Per-project options this template adds to Playwright's `use` block.
@@ -70,8 +82,8 @@ export function isCi(): boolean {
 /**
  * Platforms to build projects for, from `PLATFORM`.
  *
- * One project per platform, named `android` / `ios`, so `--project=ios`
- * selects a platform and the HTML report separates the two. `PLATFORM=android,ios`
+ * One project per platform, named `android` / `ios` / `tvos`, so `--project=ios`
+ * selects a platform and the HTML report separates them. `PLATFORM=android,ios`
  * runs both — worth doing on a fleet that has free devices of each.
  */
 export function platforms(): PlatformName[] {
@@ -79,10 +91,13 @@ export function platforms(): PlatformName[] {
         .split(',')
         .map((p) => p.trim().toLowerCase())
         .filter(Boolean);
-    const known = requested.filter((p): p is PlatformName => p === 'android' || p === 'ios');
+    const known = requested.filter(
+        (p): p is PlatformName => p === 'android' || p === 'ios' || p === 'tvos',
+    );
     if (known.length === 0) {
         throw new Error(
-            `PLATFORM="${str('PLATFORM')}" is not usable. Set it to android, ios, or android,ios.`,
+            `PLATFORM="${str('PLATFORM')}" is not usable. Set it to android, ios, tvos, `
+                + `or a comma-separated combination such as android,ios.`,
         );
     }
     return [...new Set(known)];
@@ -183,6 +198,21 @@ export function releaseId(): string | undefined {
  */
 export function networkCapture(): boolean {
     return bool('RA_NETWORK_CAPTURE', false);
+}
+
+/**
+ * Whether to let the grid infer a verdict from the session's command stream.
+ *
+ * Defaults on, because that inference is a useful backstop. It has to be off for
+ * tvOS: the grid probes the device log to decide, an Apple TV serves no logs, and
+ * the resulting `getLog failed: No logs currently available` flips a passing run
+ * to failed in the dashboard. Our own `ra:job-result` is authoritative anyway.
+ *
+ * `RA_AUTO_FAIL_DETECT=true` forces it back on if you want to see that for
+ * yourself; `=false` disables it everywhere.
+ */
+export function autoFailDetect(platform: PlatformName): boolean {
+    return bool('RA_AUTO_FAIL_DETECT', platform !== 'tvos');
 }
 
 /**

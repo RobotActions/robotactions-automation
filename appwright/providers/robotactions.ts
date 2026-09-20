@@ -30,9 +30,9 @@
 import { Device, Platform, type DeviceProvider } from 'appwright';
 import type { Client as WebDriverClient } from 'webdriver';
 import {
-    appActivity, appBundleId, buildPath, deviceUdid, expectTimeout, fullReset, gridEndpoint,
-    iosRunnerBundleId, iosRunnerUrl, networkCapture, releaseId, suiteName, usePreinstalledRunner,
-    type PlatformName,
+    appActivity, appBundleId, autoFailDetect, buildPath, deviceUdid, expectTimeout, fullReset, gridEndpoint,
+    iosRunnerBundleId, iosRunnerUrl, isApple, networkCapture, releaseId, suiteName,
+    usePreinstalledRunner, type PlatformName,
 } from '../config';
 
 /**
@@ -76,9 +76,26 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
         this.request = request;
     }
 
-    /** Requested platform as Appwright's enum. */
+    /**
+     * Requested platform as Appwright's enum.
+     *
+     * Appwright only models Android and iOS — `getPlatform()` is literally
+     * `isAndroid ? ANDROID : IOS` — so an Apple TV reports itself as iOS. That is
+     * the right answer for everything the enum drives (XCUITest selector syntax,
+     * predicate strings, bundle-id handling), and the real platform name sent to
+     * the grid comes from `platformName()` below instead.
+     */
     private get platform(): Platform {
-        return this.request.platform === 'ios' ? Platform.IOS : Platform.ANDROID;
+        return isApple(this.request.platform) ? Platform.IOS : Platform.ANDROID;
+    }
+
+    /** The `platformName` capability the grid matches against. */
+    private platformName(): string {
+        switch (this.request.platform) {
+            case 'tvos': return 'tvOS';
+            case 'ios': return 'iOS';
+            default: return 'Android';
+        }
     }
 
     async getDevice(): Promise<Device> {
@@ -170,7 +187,7 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
         const udid = this.request.udid ?? deviceUdid();
 
         return {
-            platformName: isAndroid ? 'Android' : 'iOS',
+            platformName: this.platformName(),
             'appium:automationName': isAndroid ? 'UiAutomator2' : 'XCUITest',
             'appium:newCommandTimeout': 120,
             // Appwright's locators walk the UI tree, and iOS truncates a
@@ -272,6 +289,10 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
             ...(releaseId() ? { 'ra:releaseId': releaseId() } : {}),
             ...(this.request.testName ? { 'ra:testName': this.request.testName.slice(0, 180) } : {}),
             ...(networkCapture() ? { 'ra:networkCapture': true } : {}),
+            // Off for tvOS: the grid's verdict inference reads the device log,
+            // an Apple TV serves none, and the resulting "getLog failed" marks a
+            // passing run as failed. syncTestDetails() reports the real verdict.
+            ...(autoFailDetect(this.request.platform) ? {} : { 'ra:autoFailDetect': false }),
         };
     }
 
@@ -322,6 +343,25 @@ export class RobotActionsDeviceProvider implements DeviceProvider {
         } catch {
             /* best-effort — never fail a test over reporting */
         }
+    }
+
+    /**
+     * Press a hardware button on the device.
+     *
+     * This exists because an Apple TV has no touchscreen: you move the focus
+     * ring with the Siri Remote and then select, so `tap()` — which is what most
+     * of Appwright's API is built on — has nothing to act on. Appwright's `Device`
+     * keeps its WebDriver client private and exposes no button command, hence
+     * going through the provider, which owns the same session.
+     *
+     * Valid tvOS names: Home, Menu, Up, Down, Left, Right, Select, Play/Pause.
+     * On iOS the XCUITest driver accepts home, volumeUp and volumeDown.
+     */
+    async pressButton(name: string): Promise<void> {
+        if (!this.client) {
+            throw new Error('pressButton called before the session was created.');
+        }
+        await this.client.executeScript('mobile: pressButton', [{ name }]);
     }
 }
 
