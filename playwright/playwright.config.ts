@@ -51,8 +51,19 @@ export default defineConfig({
             appName: 'grid',
             appVersion: '1.0.0',
         }],
-        cucumberReporter('json', { outputFile: 'test-results/cucumber-report.json' }),
-        cucumberReporter('html', { outputFile: 'test-results/cucumber-report.html' }),
+        // Cucumber output lives OUTSIDE test-results, and that is load-bearing.
+        //
+        // These reporters open their output file when they are *constructed*,
+        // which happens before Playwright clears its outputDir — so with a
+        // `test-results/...` path Playwright unlinks the file moments later,
+        // every later write lands on a deleted inode, and the run finishes
+        // with no report and no error. Verified by writing both paths in one
+        // run: cucumber-report/ got 25KB, test-results/ got nothing.
+        //
+        // Playwright's own json/junit reporters are unaffected because they
+        // write once at the end, after the cleanup.
+        cucumberReporter('json', { outputFile: 'cucumber-report/cucumber-report.json' }),
+        cucumberReporter('html', { outputFile: 'cucumber-report/cucumber-report.html' }),
     ],
     use: {
         baseURL: baseUrl(),
