@@ -37,7 +37,18 @@
  * select it — `focusTo()` does that by pressing a direction until a predicate
  * holds.
  */
-import type { RobotActionsDeviceProvider } from './providers/robotactions';
+// @ts-ignore ts not able to identify the import is just an interface
+import type { Client as WebDriverClient } from 'webdriver';
+import { isApple, type PlatformName } from './config';
+
+/**
+ * What a remote needs from the session owner: the raw WebDriver client.
+ * Appwright's `robotactions` provider exposes it as `client` once the session
+ * exists; `Device` keeps its own copy private and has no key command.
+ */
+export interface RemoteSession {
+    client?: WebDriverClient;
+}
 
 /** Platform-neutral remote buttons. */
 export type RemoteButton =
@@ -90,8 +101,25 @@ export interface Remote {
     ): Promise<boolean>;
 }
 
-export function createRemote(provider: RobotActionsDeviceProvider): Remote {
-    const press = (button: RemoteButton) => provider.pressKey(BUTTONS[button]);
+export function createRemote(session: RemoteSession, platform: PlatformName): Remote {
+    /**
+     * The two TV platforms take entirely different wire commands for a key,
+     * which is why callers use the neutral names above rather than either
+     * vocabulary: Apple TV takes `mobile: pressButton` with a name (`Up`,
+     * `Select`, `Menu`…); Android TV takes a keycode (`DPAD_UP` = 19,
+     * `DPAD_CENTER` = 23…) via `pressKeyCode`, and has no button-name form.
+     */
+    const press = async (button: RemoteButton) => {
+        const key = BUTTONS[button];
+        if (!session.client) {
+            throw new Error('remote used before the session was created.');
+        }
+        if (isApple(platform)) {
+            await session.client.executeScript('mobile: pressButton', [{ name: key.button }]);
+        } else {
+            await session.client.pressKeyCode(key.keycode);
+        }
+    };
 
     return {
         press,

@@ -34,16 +34,17 @@ Before('@settings', async () => {
 // The two feature files are platform-specific, so each one is skipped unless the
 // project under test is that platform. Without this, `PLATFORM=android` would
 // also run the iOS feature and fail on labels that cannot exist.
-Before('@android', async ({ platform }) => {
+Before('@android', async ({ gridPlatform: platform }) => {
     test.skip(platform !== 'android', 'Android-only labels.');
 });
 
-Before('@ios', async ({ platform }) => {
+Before('@ios', async ({ gridPlatform: platform }) => {
     test.skip(platform !== 'ios', 'iOS-only labels and identifiers.');
 });
 
 Given('the Settings app is open', async ({ device }) => {
-    const bundleId = SETTINGS_APP[device.getPlatform()];
+    // getPlatform() answers 'ios' for tvOS too, which is the right key here.
+    const bundleId = SETTINGS_APP[device.getPlatform() as 'android' | 'ios'];
     // Terminate first: relaunching is what actually returns the app to its first
     // screen, so the scenario does not inherit where the last one navigated to.
     try {

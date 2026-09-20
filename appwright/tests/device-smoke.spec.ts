@@ -10,7 +10,7 @@ import { test, expect } from '../steps/fixtures';
  * the test, so a team that does not want Gherkin loses nothing.
  */
 test.describe('Device automation smoke', () => {
-    test('the session runs on the requested platform', async ({ device, platform }) => {
+    test('the session runs on the requested platform', async ({ device, gridPlatform: platform }) => {
         // The TV platforms collapse onto their phone counterpart — see
         // steps/device-smoke.steps.ts.
         expect(device.getPlatform()).toBe(isApple(platform) ? 'ios' : 'android');

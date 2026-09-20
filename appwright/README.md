@@ -30,40 +30,40 @@ anything. Point `APP_PATH` at your build to run the app suite.
 
 ## How this connects
 
-Appwright ships four device providers — `browserstack`, `lambdatest`, `emulator`
-and `local-device` — chosen by a hardcoded `switch`. There is no registry to add
-a grid to, and `local-device` is not a way in: it spawns its own Appium on
-`localhost:4723` and shells out to `adb` / Xcode locally.
+Upstream Appwright ships four device providers — `browserstack`, `lambdatest`,
+`emulator` and `local-device` — chosen by a hardcoded `switch`, so a grid cannot
+be named in `device.provider`. This template depends on the RobotActions fork
+([github:RobotActions/appwright](https://github.com/RobotActions/appwright)),
+which adds a fifth:
 
-So this template does not name a provider. It builds the Appium session against
-the grid itself and wraps it in Appwright's exported `Device` class — the one
-behind every `device.getByText(...)` call:
-
-```
-providers/robotactions.ts   session on the grid  →  new Device(client, …)
-steps/fixtures.ts           exposes it as the `device` fixture
-features/ + tests/          use the ordinary Appwright API
+```ts
+device: { provider: 'robotactions', udid, deviceClass, testSuite, capabilities }
 ```
 
-Nothing is patched or forked, and the Appwright API is the real one rather than a
-lookalike. The session itself is ordinary Appium — the same capabilities every
-other template in this repo sends — so the grid needs nothing special either.
+That is the whole integration. `config.ts` turns the environment into one
+Playwright project per platform (`gridProject()`), and everything else is
+Appwright's own: its `defineConfig` (a global setup that checks the grid
+connection and build path before any worker starts, plus a reporter that attaches
+each session's recording to the HTML report), its `test`/`device` fixtures, and
+its `Device` API. `steps/fixtures.ts` merges that `test` with playwright-bdd's and
+adds two things — a `remote` fixture for the TV platforms and a screenshot on
+failure.
 
-Two consequences worth knowing:
+The session itself is ordinary Appium — the same W3C capabilities every other
+template in this repo sends — so the grid needs nothing special either. Three
+consequences worth knowing:
 
 - **`device.setMockCameraView()` is a no-op.** Appwright implements it with
-  BrowserStack's and LambdaTest's own image-injection executors and branches on
-  the provider name. Everything else on `Device` is plain WebDriver and behaves
-  identically.
+  BrowserStack's and LambdaTest's own image-injection executors. Everything else
+  on `Device` is plain WebDriver and behaves identically.
 - **The runner is Playwright's, driven directly** — `npx playwright test`, not
-  `npx appwright test`. Appwright's CLI is a shim over
-  `npx playwright test --config appwright.config.ts`, and its `defineConfig`
-  wrapper adds a global setup that rejects any provider outside its four plus a
-  video reporter that downloads recordings from BrowserStack. Neither applies
-  here; the recording, logs and video are in the dashboard already. This is also
-  why the config is `playwright.config.ts` — `bddgen` and the VS Code Playwright
-  extension both discover `playwright*.config.ts` and neither finds anything
-  under the other name.
+  `npx appwright test`. Appwright's CLI is a shim over the former with
+  `appwright.config.ts`, and the config here is `playwright.config.ts` because
+  `bddgen` and the VS Code Playwright extension both discover `playwright*.config.ts`
+  and neither finds anything under the other name.
+- **`@playwright/test` stays below 1.60.** Newer versions reject Appwright's
+  `use.device` config key (it collides with the `device` fixture); the fork pins
+  the range and so does `package.json`.
 
 ## Driving a real app without a build
 
@@ -166,11 +166,11 @@ file that reads it.
 | Variable | Meaning |
 |---|---|
 | `GRID_HOST` / `GRID_URL` | Grid endpoint, `host:port`. `:5555` locally, `443` hosted. |
-| `AUTH_TOKEN` | Grid bearer token. Rides the URL path (`/t/<token>/wd/hub`) — built for you. |
+| `AUTH_TOKEN` | Grid bearer token. Sent as an `Authorization` header on every request. |
 | `PLATFORM` | `android`, `ios`, `tvos`, `androidtv`, or a combination — one Playwright project each. |
 | `DEVICE_UDID` | Pin one device. Normally leave unset and let the grid choose. |
 | `DEVICE_CLASS` | Narrow the grid's choice by class (`TV`, `Phone`, `AppleTV`…). Set automatically for `androidtv`. |
-| `APP_PATH` | `.apk`/`.ipa` path **or https URL** — the grid fetches and installs it. |
+| `APP_PATH` | https URL **or a path on the grid host** to the `.apk`/`.ipa` — the grid's devices fetch and install it. Leave unset for a device-level session. |
 | `APP_PACKAGE` / `BUNDLE_ID` | For activating, terminating, and iOS clipboard reads. |
 | `RA_TESTSUITE` | Suite label stored against the session, for dashboard grouping. |
 | `WORKERS` | Devices to use at once. Defaults to 1. |

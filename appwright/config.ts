@@ -5,11 +5,12 @@
  * — should touch `process.env` directly. Both configs and the device provider
  * pull from here, so the grid wiring cannot drift apart between them.
  *
- * Deliberately free of any `appwright` import: this module is loaded by the
- * Playwright config files, and keeping the config graph clear of the fixture
- * module (which builds a `test` object at import time) avoids loading the test
- * runtime just to read a hostname.
+ * The only `appwright` import here is a type (erased at compile time): this
+ * module is loaded by the Playwright config files, and keeping the config graph
+ * clear of the fixture module (which builds a `test` object at import time)
+ * avoids loading the test runtime just to read a hostname.
  */
+import type { Platform, RobotActionsConfig } from 'appwright';
 // dotenv is optional — env vars are injected by Docker in container workspaces.
 try { require('dotenv/config'); } catch { /* not installed — using process.env directly */ }
 
@@ -66,25 +67,81 @@ export function isTv(platform: PlatformName): boolean {
 }
 
 /**
- * Per-project options this template adds to Playwright's `use` block.
+ * Per-project options this template adds on top of Appwright's `use` block.
  *
- * Declared here (rather than in the fixtures module) so `appwright.config.ts`
- * can type its `use` and `projects` entries with a plain `import type`, which
- * the transpiler erases.
+ * `gridPlatform` is the template's own platform name — it knows about the two
+ * TV platforms, which Appwright spells differently: `tvos` is
+ * `Platform.TVOS`, `androidtv` is `Platform.ANDROID` plus `deviceClass: "TV"`.
+ * Steps read this one; the provider reads Appwright's `platform`.
  */
-export interface GridDeviceOptions {
-    /** Platform the session is requested on. */
-    platform: PlatformName;
-    /** Pin one handset by UDID. Unset lets the grid pick any free device. */
-    udid?: string;
-    /** Path or https URL to the .apk/.ipa under test. */
-    buildPath?: string;
-    /** Android package / iOS bundle id, for activate + terminate + clipboard. */
-    appBundleId?: string;
-    /** Android launcher activity, when the app needs one named explicitly. */
-    appActivity?: string;
-    /** How long locator assertions keep retrying, in ms. */
-    expectTimeout: number;
+export interface GridOptions {
+    gridPlatform: PlatformName;
+}
+
+/** The template's platform name as Appwright's enum. */
+export function appwrightPlatform(platform: PlatformName): Platform {
+    // String literals rather than the enum so this stays a type-only import.
+    if (platform === 'tvos') return 'tvos' as Platform;
+    return (isApple(platform) ? 'ios' : 'android') as Platform;
+}
+
+/**
+ * Extra Appium capabilities for a platform: the grid's `ra:*` reporting caps
+ * (stripped by the proxy before they reach Appium) plus the iOS runner knobs.
+ */
+function extraCapabilities(platform: PlatformName): Record<string, unknown> {
+    const caps: Record<string, unknown> = {
+        'appium:newCommandTimeout': 120,
+    };
+    if (!isApple(platform) && appActivity()) caps['appium:appActivity'] = appActivity();
+    // Reinstall per session is Appwright's default when there is a build; the
+    // opt-out keeps the app and its data between tests.
+    if (buildPath() && !fullReset()) {
+        caps['appium:fullReset'] = false;
+        caps['appium:noReset'] = true;
+    }
+    if (releaseId()) caps['ra:releaseId'] = releaseId();
+    if (networkCapture()) caps['ra:networkCapture'] = true;
+    if (!autoFailDetect(platform)) caps['ra:autoFailDetect'] = false;
+    if (isApple(platform)) {
+        // Building a runner at session start is unreliable on iOS 17+/18+. A
+        // runner already installed on the device avoids the build entirely;
+        // alternatively point at one you launched yourself.
+        caps['appium:wdaLaunchTimeout'] = 120_000;
+        caps['appium:wdaConnectionTimeout'] = 120_000;
+        if (usePreinstalledRunner()) {
+            caps['appium:usePreinstalledWDA'] = true;
+            caps['appium:updatedWDABundleId'] = iosRunnerBundleId();
+        }
+        if (iosRunnerUrl()) caps['appium:webDriverAgentUrl'] = iosRunnerUrl();
+    }
+    return caps;
+}
+
+/**
+ * One Playwright project per platform, wired to Appwright's `robotactions`
+ * provider. Everything the provider needs comes from the environment through
+ * this one function, so the BDD and regular configs cannot drift apart.
+ */
+export function gridProject(platform: PlatformName) {
+    const device: RobotActionsConfig = {
+        provider: 'robotactions',
+        udid: deviceUdid(),
+        deviceClass: deviceClass(platform),
+        testSuite: suiteName(),
+        capabilities: extraCapabilities(platform),
+    };
+    return {
+        name: platform,
+        use: {
+            gridPlatform: platform,
+            platform: appwrightPlatform(platform),
+            device,
+            buildPath: buildPath(),
+            appBundleId: appBundleId(),
+            expectTimeout: expectTimeout(),
+        },
+    };
 }
 
 /** True when running on CI — drives retries, workers and `forbidOnly`. */
@@ -270,59 +327,39 @@ export function iosRunnerUrl(): string | undefined {
     return opt('IOS_RUNNER_URL');
 }
 
-export interface GridEndpoint {
-    protocol: 'http' | 'https';
-    hostname: string;
-    port: number;
-    /** WebDriver path, token prefix included. */
-    path: string;
-    /** `host:port`, for log lines. */
-    hostPort: string;
-}
-
 /**
- * Where the WebDriver sessions go.
- *
- * Scheme is inferred rather than hardcoded: locally the grid is plain HTTP on
- * `localhost:5555`, while the hosted endpoint is HTTPS on 443. Sending
- * cleartext to a TLS endpoint fails with an opaque connection error, so the
- * inference is worth more than a shorter function.
- *
- * The token rides the URL **path** (`/t/<token>/wd/hub`) rather than an
- * `Authorization` header. That is the grid's documented auth for Appium
- * clients and the only form that works everywhere — several clients cannot
- * attach a header to a WebDriver connection at all.
+ * The grid's base URL from GRID_URL / GRID_HOST — `host:port` with the scheme
+ * inferred (443 or a non-loopback host with no port means https).
  */
-export function gridEndpoint(): GridEndpoint {
+export function gridUrl(): string {
     const raw = str('GRID_URL') || str('GRID_HOST', 'localhost:5555');
-
     const schemeMatch = raw.match(/^(https?):\/\/(.+)$/);
     const scheme = schemeMatch?.[1];
     const hostPort = (schemeMatch?.[2] ?? raw).replace(/\/+$/, '');
     const [hostname, portStr] = hostPort.split(':');
     const loopback = LOOPBACK.some((h) => hostname.startsWith(h));
-
-    let secure: boolean;
-    if (scheme) {
-        secure = scheme === 'https';
-    } else {
-        secure = portStr === '443' || (!loopback && !portStr);
-    }
-
-    const port = parseInt(portStr || (secure ? '443' : '5555'), 10);
-    const token = str('AUTH_TOKEN');
-    const path = str('GRID_PATH', token ? `/t/${token}/wd/hub` : '/wd/hub');
-
-    return { protocol: secure ? 'https' : 'http', hostname, port, path, hostPort: `${hostname}:${port}` };
+    const secure = scheme ? scheme === 'https' : portStr === '443' || (!loopback && !portStr);
+    const port = portStr || (secure ? '443' : '5555');
+    return `${secure ? 'https' : 'http'}://${hostname}:${port}`;
 }
 
-/** One-line description of where tests will run — printed by the configs. */
+/**
+ * Hand the grid connection to Appwright's provider.
+ *
+ * The provider reads ROBOTACTIONS_GRID_URL / ROBOTACTIONS_TOKEN; this template's
+ * contract is GRID_HOST / AUTH_TOKEN (what the dashboard hands out and what the
+ * other templates use), so the two are bridged here — at import, because the
+ * config file, the global setup, every worker and the video reporter each load
+ * this module before the provider runs. An explicit ROBOTACTIONS_* wins.
+ */
+process.env.ROBOTACTIONS_GRID_URL ??= gridUrl();
+if (str('AUTH_TOKEN')) process.env.ROBOTACTIONS_TOKEN ??= str('AUTH_TOKEN');
+
 export function describeTarget(): string {
-    const grid = gridEndpoint();
-    const auth = str('AUTH_TOKEN') ? 'token in path' : 'NO AUTH_TOKEN — expect 401';
+    const auth = process.env.ROBOTACTIONS_TOKEN ? 'bearer token' : 'NO AUTH_TOKEN — expect 401';
     // Name the installed app when there is no build to install, rather than
     // reporting "no app" while the run is in fact driving one.
     const app = buildPath()
         ?? (appBundleId() ? `${appBundleId()} (already installed)` : 'no app (device-level session)');
-    return `${grid.protocol}://${grid.hostPort} (${auth}) · ${platforms().join('+')} · ${app}`;
+    return `${gridUrl()} (${auth}) · ${platforms().join('+')} · ${app}`;
 }

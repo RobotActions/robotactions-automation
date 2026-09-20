@@ -1,9 +1,8 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { defineConfig } from '@playwright/test';
+import { defineConfig } from 'appwright';
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import {
-    describeTarget, expectTimeout, forbidOnly, platforms, retries, testTimeout, workers,
-    type GridDeviceOptions,
+    describeTarget, expectTimeout, forbidOnly, gridProject, platforms, retries, testTimeout, workers,
 } from './config';
 
 /**
@@ -19,14 +18,14 @@ import {
  * the Testing view would come up empty and every `bddgen` call would need a
  * `-c` flag.
  *
- * ## Why Playwright's `defineConfig` and not Appwright's
+ * ## Appwright's `defineConfig`
  *
- * Appwright's wraps it to inject two things: a global setup that resolves
- * `device.provider` through its hardcoded provider switch — which rejects
- * anything that is not one of its own four, this template's grid included — and
- * a video reporter that downloads recordings from BrowserStack or LambdaTest.
- * Neither applies here: the device comes from the fixture in steps/fixtures.ts,
- * and the recording, logs and video are already in the dashboard.
+ * The RobotActions fork of Appwright (github:RobotActions/appwright) ships a
+ * `robotactions` device provider, so this is Appwright's own `defineConfig`:
+ * it adds a global setup that validates the grid connection and build path
+ * before any worker starts, and a reporter that attaches each session's
+ * recording to the HTML report. Both come from the provider — nothing here is
+ * patched.
  */
 const testDir = defineBddConfig({
     features: 'features/**/*.feature',
@@ -38,7 +37,7 @@ const testDir = defineBddConfig({
 // record of it, so the endpoint is printed rather than assumed.
 console.log(`[appwright] target: ${describeTarget()}`);
 
-export default defineConfig<GridDeviceOptions>({
+export default defineConfig({
     testDir,
     // Each test owns its own device session, so they do not contend. Actual
     // concurrency is workers() — one device at a time unless WORKERS says more.
@@ -71,8 +70,5 @@ export default defineConfig<GridDeviceOptions>({
     },
     // One project per requested platform, so --project=ios selects a platform
     // and the report separates the two. PLATFORM=android,ios runs both.
-    projects: platforms().map((platform) => ({
-        name: platform,
-        use: { platform },
-    })),
+    projects: platforms().map(gridProject),
 });
