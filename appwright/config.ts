@@ -39,16 +39,30 @@ const LOOPBACK = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'];
 /**
  * The platforms Appium drives here.
  *
- * `tvos` is an Apple TV. It shares XCUITest and the WebDriverAgent runner with
- * `ios`, so most of the wiring is identical — but there is no touchscreen, so
- * interaction goes through the Siri Remote's focus engine instead of taps. See
- * the `remote` fixture in steps/fixtures.ts.
+ * The two TV platforms — `tvos` (Apple TV) and `androidtv` (Android TV, Google
+ * TV, Chromecast) — reuse their phone counterpart's driver almost entirely:
+ * `tvos` is XCUITest like `ios`, `androidtv` is UiAutomator2 like `android`. What
+ * sets both apart is that a TV has no touchscreen, so interaction goes through a
+ * remote's focus ring instead of taps. See the `remote` fixture in
+ * steps/fixtures.ts.
  */
-export type PlatformName = 'android' | 'ios' | 'tvos';
+export type PlatformName = 'android' | 'ios' | 'tvos' | 'androidtv';
+
+const ALL_PLATFORMS: PlatformName[] = ['android', 'ios', 'tvos', 'androidtv'];
 
 /** True for the platforms driven by XCUITest (and therefore WebDriverAgent). */
 export function isApple(platform: PlatformName): boolean {
     return platform === 'ios' || platform === 'tvos';
+}
+
+/**
+ * True for the set-top platforms: no touchscreen, navigation by focus ring.
+ *
+ * Drives which input mechanism the `remote` fixture uses, and is the reason the
+ * `@tv` features exist separately from the touch ones.
+ */
+export function isTv(platform: PlatformName): boolean {
+    return platform === 'tvos' || platform === 'androidtv';
 }
 
 /**
@@ -91,13 +105,13 @@ export function platforms(): PlatformName[] {
         .split(',')
         .map((p) => p.trim().toLowerCase())
         .filter(Boolean);
-    const known = requested.filter(
-        (p): p is PlatformName => p === 'android' || p === 'ios' || p === 'tvos',
-    );
+    const known = requested.filter((p): p is PlatformName =>
+        (ALL_PLATFORMS as string[]).includes(p));
     if (known.length === 0) {
         throw new Error(
-            `PLATFORM="${str('PLATFORM')}" is not usable. Set it to android, ios, tvos, `
-                + `or a comma-separated combination such as android,ios.`,
+            `PLATFORM="${str('PLATFORM')}" is not usable. Set it to one of `
+                + `${ALL_PLATFORMS.join(', ')}, or a comma-separated combination `
+                + `such as android,ios.`,
         );
     }
     return [...new Set(known)];
@@ -213,6 +227,20 @@ export function networkCapture(): boolean {
  */
 export function autoFailDetect(platform: PlatformName): boolean {
     return bool('RA_AUTO_FAIL_DETECT', platform !== 'tvos');
+}
+
+/**
+ * Route to a set-top device by class rather than by pinning one udid.
+ *
+ * The grid advertises `appium:deviceClass` on every slot (`TV` for Android TV and
+ * Chromecast, `AppleTV`, `Phone`, `iPad`…). Sending it lets `PLATFORM=androidtv`
+ * pick any free TV instead of requiring DEVICE_UDID, the same way a plain
+ * `android` run picks any free handset.
+ */
+export function deviceClass(platform: PlatformName): string | undefined {
+    const explicit = opt('DEVICE_CLASS');
+    if (explicit) return explicit;
+    return platform === 'androidtv' ? 'TV' : undefined;
 }
 
 /**

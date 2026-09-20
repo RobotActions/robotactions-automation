@@ -22,6 +22,7 @@ anything. Point `APP_PATH` at your build to run the app suite.
 | `npm run test:app` | The `@app` features (needs `APP_PATH`) |
 | `npm run test:settings` | The `@settings` walkthrough — a real app, no build needed |
 | `PLATFORM=tvos npm test` | Apple TV coverage, including the Siri Remote |
+| `PLATFORM=androidtv npm test` | Android TV / Google TV / Chromecast coverage |
 | `npm run test:regular` | Regular non-BDD specs under `tests/` |
 | `npm run test:tagged @smoke` | Features matching a tag |
 | `npm run test:debug` | Playwright inspector |
@@ -89,17 +90,24 @@ Three things about it, all deliberate:
   screen`). Those steps are the ones to reuse for your own app; only the two
   feature files are throwaway.
 
-## Apple TV (tvOS)
+## TV platforms (Apple TV and Android TV)
 
-`PLATFORM=tvos` targets an Apple TV. tvOS runs through XCUITest and
-WebDriverAgent exactly as iOS does, so **locators, assertions and screenshots are
-unchanged** — `getByText`, `getById`, `getByXpath` and `expect(...).toBeVisible()`
-all behave the same.
+Two set-top platforms are supported:
 
-What changes is input. An Apple TV has no touchscreen, so there is nothing to
-tap: you move a focus ring with the Siri Remote and press Select on whatever is
-focused. Appwright's API is built around taps and gestures and has no button
-command, so this template adds a `remote` fixture:
+| `PLATFORM` | Devices | Driver |
+|---|---|---|
+| `tvos` | Apple TV | XCUITest, as `ios` |
+| `androidtv` | Android TV, Google TV, Chromecast | UiAutomator2, as `android` |
+
+Each reuses its phone counterpart's driver, so **locators, assertions and
+screenshots are unchanged** — `getByText`, `getById`, `getByXpath` and
+`expect(...).toBeVisible()` all behave the same, and `features/device-smoke.feature`
+runs against a TV as-is.
+
+What changes is input. A TV has no touchscreen, so there is nothing to tap: you
+move a focus ring with the remote and press Select on whatever is focused.
+Appwright's API is built around taps and gestures and has no key command, so this
+template adds a `remote` fixture:
 
 ```ts
 When('I open Settings', async ({ remote, device }) => {
@@ -108,19 +116,36 @@ When('I open Settings', async ({ remote, device }) => {
 });
 ```
 
-`remote` gives you `up/down/left/right`, `select`, `menu` (back), `home`,
-`playPause`, `press(button)` for any XCUITest button name, and `focusTo(predicate)`
-— which presses a direction until the predicate holds, the tvOS equivalent of the
-scroll loop the touch platforms need. It shares the session with `device`, so the
-two are one session, not two.
+`remote` gives you `up/down/left/right`, `select`, `back`, `home`, `playPause`,
+`press(button)`, and `focusTo(predicate)` — which presses a direction until the
+predicate holds, the TV equivalent of the scroll loop the touch platforms need. It
+shares the session with `device`, so the two are one session, not two.
+
+**The button names are platform-neutral, and that is the point.** The two
+platforms agree on nothing at the wire level, so one vocabulary is what lets a
+single feature file drive both:
+
+| Button | Apple TV | Android TV |
+|---|---|---|
+| `down` | `mobile: pressButton` `Down` | keycode 20 (`DPAD_DOWN`) |
+| `select` | `mobile: pressButton` `Select` | keycode 23 (`DPAD_CENTER`) |
+| `back` | `mobile: pressButton` `Menu` | keycode 4 (`BACK`) |
+
+Note `back` rather than `menu`: Apple labels that button Menu and Android labels
+it Back, so the name describes the intent instead.
+
+**Picking a TV.** An `androidtv` run needs no `DEVICE_UDID` — an Android TV
+reports `platformName: Android` like every phone, so the template sends
+`appium:deviceClass: TV` and the grid hands over any free TV. Without that, an
+`androidtv` run would cheerfully land on a phone.
 
 Two quirks worth knowing:
 
-- **`device.getPlatform()` returns `'ios'` on an Apple TV.** Appwright models only
-  Android and iOS (`isAndroid ? ANDROID : IOS`), so tvOS reports as iOS. The real
-  platform still goes to the grid as `platformName: 'tvOS'`; only Appwright's own
-  view of it collapses.
-- **`tap()`, `scroll()` and `fill()` are not useful on tvOS** — they resolve to
+- **`device.getPlatform()` collapses the TV platforms.** Appwright models only
+  Android and iOS (`isAndroid ? ANDROID : IOS`), so an Apple TV reports as `ios`
+  and an Android TV as `android`. The grid still receives the real
+  `platformName`; only Appwright's own view of it collapses.
+- **`tap()`, `scroll()` and `fill()` are not useful on a TV** — they resolve to
   touch gestures. Use the remote.
 - **The grid's verdict inference is disabled on tvOS.** It reads the device log to
   decide how a run went, an Apple TV serves none, and the resulting `getLog
@@ -143,8 +168,9 @@ file that reads it.
 |---|---|
 | `GRID_HOST` / `GRID_URL` | Grid endpoint, `host:port`. `:5555` locally, `443` hosted. |
 | `AUTH_TOKEN` | Grid bearer token. Rides the URL path (`/t/<token>/wd/hub`) — built for you. |
-| `PLATFORM` | `android`, `ios`, `tvos`, or a combination — one Playwright project each. |
-| `DEVICE_UDID` | Pin one handset. Normally leave unset and let the grid choose. |
+| `PLATFORM` | `android`, `ios`, `tvos`, `androidtv`, or a combination — one Playwright project each. |
+| `DEVICE_UDID` | Pin one device. Normally leave unset and let the grid choose. |
+| `DEVICE_CLASS` | Narrow the grid's choice by class (`TV`, `Phone`, `AppleTV`…). Set automatically for `androidtv`. |
 | `APP_PATH` | `.apk`/`.ipa` path **or https URL** — the grid fetches and installs it. |
 | `APP_PACKAGE` / `BUNDLE_ID` | For activating, terminating, and iOS clipboard reads. |
 | `RA_TESTSUITE` | Suite label stored against the session, for dashboard grouping. |

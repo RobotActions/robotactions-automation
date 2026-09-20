@@ -87,13 +87,13 @@
     {
       "id": "appwright",
       "name": "Appwright + Playwright runner (Mobile)",
-      "description": "Native mobile testing with Appwright — Playwright's test runner and assertion style over Appium (device.getByText('Sign in').tap()). Ships a grid device provider, because Appwright's own provider list is a closed set with no way to add one. BDD via playwright-bdd, page objects, a device-level smoke that is green with no app installed, and an opt-in walkthrough of the preinstalled Settings app that exercises locators, taps and scrolling without uploading a build. Also covers Apple TV (tvOS) with a Siri Remote fixture, since tvOS has no touchscreen and navigates by focus ring.",
+      "description": "Native mobile testing with Appwright — Playwright's test runner and assertion style over Appium (device.getByText('Sign in').tap()). Ships a grid device provider, because Appwright's own provider list is a closed set with no way to add one. BDD via playwright-bdd, page objects, a device-level smoke that is green with no app installed, and an opt-in walkthrough of the preinstalled Settings app that exercises locators, taps and scrolling without uploading a build. Also covers the TV platforms — Apple TV (tvos) and Android TV / Google TV / Chromecast (androidtv) — with a platform-neutral remote fixture, since a TV has no touchscreen and navigates by focus ring.",
       "framework": "appwright",
       "language": "typescript",
       "runner": "playwright-test",
       "bdd": "playwright-bdd",
       "target": "mobile",
-      "tags": ["bdd", "typescript", "appwright", "playwright", "appium", "mobile", "android", "ios", "tvos", "appletv"],
+      "tags": ["bdd", "typescript", "appwright", "playwright", "appium", "mobile", "android", "ios", "tvos", "appletv", "androidtv", "googletv", "chromecast", "tv"],
       "entryCommand": "npx bddgen && npx playwright test --grep-invert \"@app|@settings\"",
       "secondaryCommand": "npx playwright test --config=playwright.regular.config.ts",
       "dependencies": {
