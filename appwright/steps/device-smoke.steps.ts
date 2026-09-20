@@ -20,7 +20,11 @@ Then('the session runs on the requested platform', async ({ device, platform }) 
     // Worth asserting rather than assuming: with no DEVICE_UDID pinned the grid
     // chooses the device, and a platform mismatch would otherwise surface much
     // later as locators that never match anything.
-    expect(device.getPlatform()).toBe(platform);
+    //
+    // Compared against what Appwright *can* report, not against `platform`
+    // directly: `getPlatform()` is `isAndroid ? ANDROID : IOS`, so an Apple TV
+    // answers 'ios'. Asserting 'tvos' here would fail on a perfectly good session.
+    expect(device.getPlatform()).toBe(platform === 'android' ? 'android' : 'ios');
 });
 
 Then('a screenshot can be captured', async ({ device }) => {
