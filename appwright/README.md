@@ -154,9 +154,8 @@ Two quirks worth knowing:
   only; the explicit `ra:job-result` this template reports is authoritative
   anyway. Override with `RA_AUTO_FAIL_DETECT=true`.
 
-A tvOS session is also recorded as `platform: ios` in the dashboard — the grid
-normalises it — so filter dashboard rows by device udid rather than platform when
-you want Apple TV runs.
+Both TV platforms are recorded under their own `platform` in the dashboard
+(`tvos`, `androidtv`), so you can filter runs by platform there as usual.
 
 ## Configuration
 
