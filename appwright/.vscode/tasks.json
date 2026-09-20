@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Regenerate .features-gen once. Bound to Cmd/Ctrl+Shift+B.
+      "label": "bddgen",
+      "type": "shell",
+      "command": "npx bddgen",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "dedicated", "clear": true }
+    }
+  ]
+}

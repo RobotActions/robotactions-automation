@@ -1,0 +1,27 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "1.0.0",
+  "description": "Native mobile test automation with Appwright \u2014 Playwright-style tests driving real devices over Appium",
+  "scripts": {
+    "pretest": "[ -d node_modules ] || npm install",
+    "test": "npx bddgen && npx playwright test --grep-invert \"@app|@settings\"",
+    "test:app": "npx bddgen && npx playwright test --grep @app",
+    "test:settings": "npx bddgen && npx playwright test --grep @settings",
+    "test:tagged": "npx bddgen && npx playwright test --grep",
+    "test:regular": "npx playwright test --config=playwright.regular.config.ts",
+    "test:debug": "npx bddgen && npx playwright test --debug",
+    "report": "npx playwright show-report",
+    "bddgen": "npx bddgen"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.59.1",
+    "@types/node": "^22.0.0",
+    "dotenv": "^16.4.0",
+    "playwright-bdd": "^8.5.1",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "appwright": "^0.1.45",
+    "webdriver": "^8.36.1"
+  }
+}

@@ -85,6 +85,26 @@
       }
     },
     {
+      "id": "appwright",
+      "name": "Appwright + Playwright runner (Mobile)",
+      "description": "Native mobile testing with Appwright — Playwright's test runner and assertion style over Appium (device.getByText('Sign in').tap()). Ships a grid device provider, because Appwright's own provider list is a closed set with no way to add one. BDD via playwright-bdd, page objects, a device-level smoke that is green with no app installed, and an opt-in walkthrough of the preinstalled Settings app that exercises locators, taps and scrolling without uploading a build.",
+      "framework": "appwright",
+      "language": "typescript",
+      "runner": "playwright-test",
+      "bdd": "playwright-bdd",
+      "target": "mobile",
+      "tags": ["bdd", "typescript", "appwright", "playwright", "appium", "mobile", "android", "ios"],
+      "entryCommand": "npx bddgen && npx playwright test --grep-invert \"@app|@settings\"",
+      "secondaryCommand": "npx playwright test --config=playwright.regular.config.ts",
+      "dependencies": {
+        "appwright": "^0.1.45",
+        "webdriver": "^8.36.1",
+        "@playwright/test": "1.59.1",
+        "playwright-bdd": "^8.5.1",
+        "typescript": "^5.7.0"
+      }
+    },
+    {
       "id": "selenium-python",
       "name": "Selenium + Python + pytest-bdd",
       "description": "BDD testing with pytest-bdd, Selenium WebDriver, and Appium-Python-Client. PLATFORM env var (web|android|ios) selects driver — same template covers desktop browsers, Android apps, and iOS apps via the shared WebDriver protocol.",
