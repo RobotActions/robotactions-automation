@@ -1,6 +1,6 @@
 // Environment is read only in ./config.ts — never process.env directly here.
 import { defineConfig } from '@playwright/test';
-import { defineBddConfig } from 'playwright-bdd';
+import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
 import {
     describeTarget, expectTimeout, forbidOnly, platforms, retries, testTimeout, workers,
     type GridDeviceOptions,
@@ -52,11 +52,19 @@ export default defineConfig<GridDeviceOptions>({
         ['html', { open: 'never' }],
         ['json', { outputFile: 'test-results/results.json' }],
         ['junit', { outputFile: 'test-results/junit.xml' }],
-        // No cucumberReporter() here on purpose. playwright-bdd 8.5.1 with
-        // Playwright 1.59 constructs it through getConfigDirFromEnv(), which
-        // bails out before the reporter is built — so it writes no file and
-        // prints no error. A reporter that silently produces nothing is worse
-        // than no reporter, so the three above (all verified to emit) are it.
+        // Cucumber output lives OUTSIDE test-results, and that is load-bearing.
+        //
+        // These reporters open their output file when they are *constructed*,
+        // which happens before Playwright clears its outputDir — so with a
+        // `test-results/...` path Playwright unlinks the file moments later,
+        // every later write lands on a deleted inode, and the run finishes with
+        // no report and no error. Verified by writing both paths in one run:
+        // cucumber-report/ got its file, test-results/ got nothing.
+        //
+        // The reporters above are unaffected because they write once at the
+        // end, after the cleanup.
+        cucumberReporter('json', { outputFile: 'cucumber-report/cucumber-report.json' }),
+        cucumberReporter('html', { outputFile: 'cucumber-report/cucumber-report.html' }),
     ],
     use: {
         expectTimeout: expectTimeout(),
