@@ -184,8 +184,17 @@ export function deviceUdid(): string | undefined {
     return opt('DEVICE_UDID');
 }
 
-/** The build under test — a local path or an https URL the grid fetches. */
+/**
+ * The build under test, or undefined for a device-level session.
+ *
+ * `APP_ID` names a build in the RobotActions App Library by its upload id —
+ * the grid fetches it with this run's token, so nothing needs hosting.
+ * `APP_PATH` is the older form: an https URL the grid can download, or an
+ * absolute path on the grid host. `APP_ID` wins when both are set.
+ */
 export function buildPath(): string | undefined {
+    const id = opt('APP_ID');
+    if (id) return `ra-app://${id}`;
     return opt('APP_PATH');
 }
 

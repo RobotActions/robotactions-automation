@@ -97,7 +97,7 @@
       "entryCommand": "npx bddgen && npx playwright test --grep-invert \"@app|@settings\"",
       "secondaryCommand": "npx playwright test --config=playwright.regular.config.ts",
       "dependencies": {
-        "appwright": "github:RobotActions/appwright#v0.2.0",
+        "appwright": "github:RobotActions/appwright#v0.2.1",
         "webdriver": "^8.36.1",
         "@playwright/test": "1.59.1",
         "playwright-bdd": "^8.5.1",
