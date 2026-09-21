@@ -21,7 +21,7 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
-    "appwright": "github:RobotActions/appwright#v0.2.0",
+    "appwright": "github:RobotActions/appwright#v0.2.1",
     "webdriver": "^8.36.1"
   }
 }

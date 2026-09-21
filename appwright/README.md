@@ -14,12 +14,13 @@ npm test                      # BDD suite (device smoke — no app needed)
 
 A fresh clone is green: the default suite is a device-level smoke that needs no
 app installed, so you see a real session in the dashboard before writing
-anything. Point `APP_PATH` at your build to run the app suite.
+anything. Point `APP_ID` at a build in your App Library to run the app suite —
+or try the [Wikipedia sample](#try-it-with-the-wikipedia-sample) first.
 
 | Command | Runs |
 |---|---|
 | `npm test` | BDD features, `@app` excluded — green with no app |
-| `npm run test:app` | The `@app` features (needs `APP_PATH`) |
+| `npm run test:app` | The `@app` features (needs `APP_ID` or `APP_PATH`) |
 | `npm run test:settings` | The `@settings` walkthrough — a real app, no build needed |
 | `PLATFORM=tvos npm test` | Apple TV coverage, including the Siri Remote |
 | `PLATFORM=androidtv npm test` | Android TV / Google TV / Chromecast coverage |
@@ -64,6 +65,37 @@ consequences worth knowing:
 - **`@playwright/test` stays below 1.60.** Newer versions reject Appwright's
   `use.device` config key (it collides with the `device` fixture); the fork pins
   the range and so does `package.json`.
+
+## Try it with the Wikipedia sample
+
+The same app and scenario as Appwright's own example, installed from your App
+Library rather than a local file. Import it once — the library pulls the APK
+straight from the Appwright repo, nothing is hosted by you:
+
+```sh
+curl -X POST https://<rds-host>/apps/import-url \
+     -H "Authorization: Bearer $AUTH_TOKEN" -H "Content-Type: application/json" \
+     -d '{"url":"https://github.com/empirical-run/appwright/raw/main/example/builds/wikipedia.apk"}'
+# → { "id": "8eb08fc5-…", "fileName": "wikipedia.apk", "expiresAt": "…" }
+```
+
+Then, in `.env`:
+
+```sh
+APP_ID=<the id>
+APP_PACKAGE=org.wikipedia
+PLATFORM=android
+```
+
+`npm run test:app` installs Wikipedia on a real Android device, skips the
+onboarding, searches for "playwright", opens the article and asserts on it
+(`features/wikipedia.feature`). It is skipped unless `APP_PACKAGE` is
+`org.wikipedia`, so switching to your own build never runs it by accident.
+Android only: Appwright ships the iOS build for the Simulator, which a real
+iPhone cannot run.
+
+Library uploads expire (48 h by default), so a CI job should import the build
+and use the id it gets back, rather than pinning one.
 
 ## Driving a real app without a build
 
@@ -170,7 +202,8 @@ file that reads it.
 | `PLATFORM` | `android`, `ios`, `tvos`, `androidtv`, or a combination — one Playwright project each. |
 | `DEVICE_UDID` | Pin one device. Normally leave unset and let the grid choose. |
 | `DEVICE_CLASS` | Narrow the grid's choice by class (`TV`, `Phone`, `AppleTV`…). Set automatically for `androidtv`. |
-| `APP_PATH` | https URL **or a path on the grid host** to the `.apk`/`.ipa` — the grid's devices fetch and install it. Leave unset for a device-level session. |
+| `APP_ID` | A build in your RobotActions **App Library**, by upload id (dashboard → Apps, `POST /apps/import-url`, or the `app_upload` MCP tool). The grid fetches it with this run's token — nothing to host. Leave unset (and `APP_PATH` unset) for a device-level session. |
+| `APP_PATH` | The older form: an https URL the grid can download, **or a path on the grid host**. `APP_ID` wins when both are set. |
 | `APP_PACKAGE` / `BUNDLE_ID` | For activating, terminating, and iOS clipboard reads. |
 | `RA_TESTSUITE` | Suite label stored against the session, for dashboard grouping. |
 | `WORKERS` | Devices to use at once. Defaults to 1. |
