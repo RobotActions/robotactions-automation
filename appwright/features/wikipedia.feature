@@ -17,16 +17,31 @@ Feature: Wikipedia sample app
   #   APP_ID=<id>  APP_PACKAGE=org.wikipedia  PLATFORM=android
   #   npm run test:app
   #
-  # It is skipped unless APP_PACKAGE is org.wikipedia, so a project pointed at
-  # its own build never runs it by mistake. Android only — Appwright ships the
-  # iOS build for the Simulator, which a real iPhone cannot run.
+  # iOS: Appwright only ships the Simulator build, which a real iPhone cannot
+  # run, so the grid repo builds one from source and signs it for the fleet
+  # (appium-grid-service scripts/build-wikipedia-ios.sh). Upload the .ipa on
+  # the Apps page or with POST /upload, then:
+  #
+  #   APP_ID=<id>  BUNDLE_ID=org.wikimedia.wikipedia.robotactions  PLATFORM=ios
+  #
+  # The two scenarios differ because the apps do: the 2022 Android APK has a
+  # "Search Wikipedia" bar on its feed, today's iOS app has a Search tab.
+  #
+  # Both are skipped unless APP_PACKAGE / BUNDLE_ID names Wikipedia, so a
+  # project pointed at its own build never runs them by mistake.
 
-  Background:
+  @android @smoke
+  Scenario: Searching opens an article (Android)
     Given the Wikipedia app is on its first screen
-
-  @smoke
-  Scenario: Searching opens an article
     When I skip the onboarding
     And I search Wikipedia for "playwright"
+    And I tap "Playwright (software)"
+    Then "Microsoft" is on screen
+
+  @ios @smoke
+  Scenario: Searching opens an article (iOS)
+    Given the Wikipedia app is open past its onboarding
+    When I open the Search tab
+    And I type "playwright" into the search field
     And I tap "Playwright (software)"
     Then "Microsoft" is on screen

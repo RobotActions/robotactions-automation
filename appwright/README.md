@@ -89,10 +89,25 @@ PLATFORM=android
 
 `npm run test:app` installs Wikipedia on a real Android device, skips the
 onboarding, searches for "playwright", opens the article and asserts on it
-(`features/wikipedia.feature`). It is skipped unless `APP_PACKAGE` is
-`org.wikipedia`, so switching to your own build never runs it by accident.
-Android only: Appwright ships the iOS build for the Simulator, which a real
-iPhone cannot run.
+(`features/wikipedia.feature`). It is skipped unless `APP_PACKAGE` /
+`BUNDLE_ID` names Wikipedia, so switching to your own build never runs it by
+accident.
+
+**iOS too.** Appwright only ships the iOS build for the Simulator, which a real
+iPhone cannot run, so the grid repo builds one from source and signs it for the
+fleet's devices (`appium-grid-service/scripts/build-wikipedia-ios.sh`). Upload
+the resulting `.ipa` on the Apps page (or `POST /upload`) and run:
+
+```sh
+APP_ID=<the ipa's id>
+BUNDLE_ID=org.wikimedia.wikipedia.robotactions
+PLATFORM=ios
+```
+
+The iOS scenario differs from the Android one because the apps do — the 2022
+APK has a search bar on its feed, today's iOS app has a Search tab — and it
+relaunches the app with the project's own testing launch arguments so the
+first screen is deterministic (onboarding is a persisted 50/50 experiment).
 
 Library uploads expire (48 h by default), so a CI job should import the build
 and use the id it gets back, rather than pinning one.
