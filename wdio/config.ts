@@ -131,8 +131,18 @@ export function errorText(error: unknown): string {
     return firstLine || 'scenario failed';
 }
 
-/** Application under test. */
-export function baseUrl(fallback = '{{BASE_URL}}'): string {
+/**
+ * Application under test.
+ *
+ * Defaults to the shipped example target (robotactions.com), matching every
+ * conf file that already passes that fallback explicitly. An unresolved
+ * `{{BASE_URL}}` placeholder used to be the default here, and WebdriverIO's
+ * `browser.url()` runs `new URL(path, this.options.baseUrl)` whenever
+ * `baseUrl` is a non-empty string — the constructor validates the base
+ * argument even when `path` is already absolute, so a placeholder broke
+ * every navigation, not just relative ones, with `TypeError: Invalid URL`.
+ */
+export function baseUrl(fallback = 'https://robotactions.com'): string {
     return str('BASE_URL', fallback);
 }
 
