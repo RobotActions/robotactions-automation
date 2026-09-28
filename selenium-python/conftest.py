@@ -219,8 +219,14 @@ def _assert_token_not_expired(token: str) -> None:
 
 @pytest.fixture(scope="session")
 def base_url() -> str:
-    """Base URL of application under test (web only)."""
-    return os.environ.get("BASE_URL", "{{BASE_URL}}")
+    """Base URL of application under test (web only).
+
+    Defaults to the shipped example target, matching the other test modules
+    in this template (`test_robotactions_suite.py`,
+    `test_robotactions_mobileweb_sanity.py`) which already fall back to
+    "https://robotactions.com" rather than the unresolved placeholder.
+    """
+    return os.environ.get("BASE_URL", "https://robotactions.com")
 
 
 @pytest.fixture(scope="session")

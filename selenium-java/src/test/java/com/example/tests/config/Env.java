@@ -22,8 +22,15 @@ public final class Env {
         return get("PLATFORM", "web").toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Defaults to the shipped example target — the feature files, step
+     * definitions and page objects in this template already hardcode
+     * "https://robotactions.com" rather than resolving through this method,
+     * so an unresolved {@code {{BASE_URL}}} placeholder here was a landmine
+     * for the first caller rather than a working default.
+     */
     public static String baseUrl() {
-        return get("BASE_URL", "{{BASE_URL}}");
+        return get("BASE_URL", "https://robotactions.com");
     }
 
     /**
