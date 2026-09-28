@@ -68,6 +68,17 @@ All device and server settings are controlled via environment variables (set in 
 | `APP_PATH`      | _(empty)_            | Path or URL to .apk/.ipa — auto-installs before tests |
 | `GRID_HOST`     | `localhost:5555`     | Grid endpoint `host:port`. A standalone Appium server instead listens on `:4723`. |
 | `AUTH_TOKEN`    | _(empty)_            | Bearer token for authenticated grid endpoints    |
+| `RA_TESTSUITE`  | `appium-js`          | Test-suite label surfaced to the grid (`ra:testsuite`) |
+
+## Reporting results to the grid
+
+Both `npm test` (Cucumber) and `npm run test:regular` (Mocha) report the session's
+test name and pass/fail verdict back to the grid via `ra-report.ts` — see
+[docs/connecting-to-the-grid.md](../docs/connecting-to-the-grid.md#reporting-passfail-back-to-the-dashboard)
+for the wire contract. A worker runs every scenario/test in its spec file(s) over one
+shared session, so the verdict is tracked across the whole run and reported once, at
+the end, with the first failure's reason — a later pass never erases an earlier
+failure. Reporting is best-effort and never fails the run.
 
 ## Commands
 

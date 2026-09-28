@@ -1,6 +1,12 @@
 import 'dotenv/config';
+import { createResultTracker, reportTestName, suiteName } from './ra-report';
 
 const platform = (process.env.PLATFORM || 'android').toLowerCase();
+
+// One session per worker for the whole run of feature files it's handed —
+// tracked here so the verdict survives across every scenario. See
+// ra-report.ts for why this isn't reported per-scenario.
+const resultTracker = createResultTracker();
 
 // Android capability
 const androidCapability = {
@@ -26,6 +32,12 @@ const androidCapability = {
     'appium:newCommandTimeout': 120,
     // App install: set APP_PATH to .apk file path or URL for auto-install
     ...(process.env.APP_PATH ? { 'appium:app': process.env.APP_PATH } : {}),
+    // Test-suite label surfaced to the grid as sessions.test_suite, driving
+    // the dashboard's Test Suite filter + per-suite rollup. Previously only
+    // read by the unrelated wdio.grid-smoke.conf.ts — every session from
+    // this config (and from wdio.mocha.conf.ts, which inherits this
+    // capability set) recorded testSuite: null regardless of RA_TESTSUITE.
+    'ra:testsuite': suiteName(),
 };
 
 // iOS capability
@@ -60,6 +72,8 @@ const iosCapability = {
     // Optional: attach to a runner you launched yourself, so Appium neither
     // builds one nor manages its own connection.
     ...(process.env.IOS_RUNNER_URL ? { 'appium:webDriverAgentUrl': process.env.IOS_RUNNER_URL } : {}),
+    // See androidCapability above for why this is here.
+    'ra:testsuite': suiteName(),
 };
 
 const activeCapability = platform === 'ios' ? iosCapability : androidCapability;
@@ -129,5 +143,20 @@ export const config = {
         if (!result.passed) {
             await browser.takeScreenshot();
         }
+    },
+
+    /** Names the session after whichever scenario is currently running. */
+    beforeScenario: async function (world: { pickle: { name: string } }) {
+        await reportTestName(world.pickle.name);
+    },
+
+    /** Records this scenario's outcome; the aggregate verdict reports once in `after`. */
+    afterScenario: async function (_world: unknown, result: { passed: boolean; error?: unknown }) {
+        resultTracker.record(!!(result && result.passed), result && result.error);
+    },
+
+    /** Reports the whole session's verdict — the one hook every framework calls. */
+    after: async function () {
+        await resultTracker.report();
     },
 };

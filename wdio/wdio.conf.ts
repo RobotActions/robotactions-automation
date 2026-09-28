@@ -1,5 +1,10 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, gridConnection, isCi, maxInstances, suiteName } from './config';
+import { baseUrl, createResultTracker, gridConnection, isCi, maxInstances, reportTestName, suiteName } from './config';
+
+// One session per worker for the whole run of feature files it's handed —
+// tracked here so the verdict survives across every scenario. See the
+// "Result reporting" comment in ./config.ts for why this isn't per-scenario.
+const resultTracker = createResultTracker();
 
 export const config = {
     runner: 'local' as const,
@@ -58,5 +63,20 @@ export const config = {
         if (!result.passed) {
             await browser.takeScreenshot();
         }
+    },
+
+    /** Names the session after whichever scenario is currently running. */
+    beforeScenario: async function (world: { pickle: { name: string } }) {
+        await reportTestName(world.pickle.name);
+    },
+
+    /** Records this scenario's outcome; the aggregate verdict reports once in `after`. */
+    afterScenario: async function (_world: unknown, result: { passed: boolean; error?: unknown }) {
+        resultTracker.record(!!(result && result.passed), result && result.error);
+    },
+
+    /** Reports the whole session's verdict — the one hook every framework calls. */
+    after: async function () {
+        await resultTracker.report();
     },
 };
