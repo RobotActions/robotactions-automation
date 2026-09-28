@@ -167,3 +167,65 @@ export function isCi(): boolean {
     const value = str('CI').toLowerCase();
     return value !== '' && value !== 'false' && value !== '0';
 }
+
+// ─── Result reporting (regular/non-BDD-per-scenario paths) ────────────────
+//
+// wdio.conf.ts (Cucumber) and wdio.mocha.conf.ts (Mocha) each run every test
+// in a SPEC FILE inside one shared browser session — WDIO opens one session
+// per worker, not per test. reportTestResult() cannot just be called after
+// every test the way the fleet configs do (they reloadSession() between
+// scenarios): robotactions.spec.ts loads the page once in a top-level
+// `before()` and every `it()` after the first depends on that state, so
+// reloading mid-file would blank the page out from under later tests.
+//
+// So the verdict is tracked in memory across the whole worker and reported
+// ONCE, in the `after` hook (the one lifecycle hook every framework calls).
+// First failure wins — a later passing test must never erase an earlier
+// failure, which a naive "report after every test" would do by last-write-wins.
+
+/** Sets the CURRENT test's name via the `ra:job-name` magic verb. Best-effort. */
+export async function reportTestName(name: string): Promise<void> {
+    const trimmed = name.slice(0, 200);
+    try {
+        await (globalThis as { browser?: { execute: (script: string) => Promise<unknown> } }).browser?.execute(
+            `ra:job-name=${trimmed}`,
+        );
+    } catch (err) {
+        console.warn('[ra-report] failed to report test name:', (err as Error)?.message ?? err);
+    }
+}
+
+/**
+ * Aggregates pass/fail across every test run by this worker and reports it
+ * once via `ra:job-result`. Create one per config (module scope — each WDIO
+ * worker is its own process, so this never leaks across workers).
+ */
+export function createResultTracker() {
+    let failureCount = 0;
+    let firstFailure = '';
+
+    return {
+        /** Call from afterTest / afterScenario with that test's outcome. */
+        record(passed: boolean, error?: unknown): void {
+            if (passed) return;
+            failureCount += 1;
+            if (!firstFailure) firstFailure = errorText(error);
+        },
+        /** Call once from the worker-level `after` hook. Never throws. */
+        async report(): Promise<void> {
+            const verb =
+                failureCount === 0
+                    ? 'ra:job-result=passed'
+                    : `ra:job-result=failed:${(
+                          failureCount > 1 ? `${failureCount} failed. First: ${firstFailure}` : firstFailure
+                      ).slice(0, 200)}`;
+            try {
+                await (globalThis as { browser?: { execute: (script: string) => Promise<unknown> } }).browser?.execute(
+                    verb,
+                );
+            } catch (err) {
+                console.warn('[ra-report] failed to report test result:', (err as Error)?.message ?? err);
+            }
+        },
+    };
+}

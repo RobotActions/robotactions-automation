@@ -43,6 +43,17 @@ npm test
 Filter by tag with `--cucumberOpts.tagExpression='@smoke'` (quote the whole expression;
 `'@smoke and not @wip'` also works).
 
+## Reporting results to the grid
+
+Both `npm test` (Cucumber) and `npm run test:regular` (Mocha) report the session's
+test name and pass/fail verdict back to the grid — via the `reportTestName` /
+`createResultTracker` helpers in [`config.ts`](./config.ts). See
+[docs/connecting-to-the-grid.md](../docs/connecting-to-the-grid.md#reporting-passfail-back-to-the-dashboard)
+for the wire contract. A worker runs every scenario/test in its spec file(s) over one
+shared session, so the verdict is tracked across the whole run and reported once, at
+the end, with the first failure's reason — a later pass never erases an earlier
+failure. Reporting is best-effort and never fails the run.
+
 ## VS Code
 
 **Before the editor is useful, run `npm install` in this folder.** Node globals
