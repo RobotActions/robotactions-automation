@@ -3,6 +3,14 @@ import { createResultTracker, reportTestName, suiteName } from './ra-report';
 
 const platform = (process.env.PLATFORM || 'android').toLowerCase();
 
+// Android and Android TV/Chromecast share one Appium platformName
+// ("Android"), and the iOS fleet can hold an iPad alongside the iPhones — so
+// a request with no class filter can be handed a TV or a tablet instead of a
+// phone. appium:deviceClass is what the grid's slot matcher enforces (every
+// slot advertises one: "Phone", "iPhone", "iPad", "TV", "AppleTV"). Default
+// per-platform below; DEVICE_CLASS overrides it either way.
+const deviceClass = (defaultClass: string) => process.env.DEVICE_CLASS || defaultClass;
+
 // One session per worker for the whole run of feature files it's handed —
 // tracked here so the verdict survives across every scenario. See
 // ra-report.ts for why this isn't reported per-scenario.
@@ -27,6 +35,7 @@ const androidCapability = {
     // package that is not installed.
     ...(process.env.APP_PACKAGE ? { 'appium:appPackage': process.env.APP_PACKAGE } : {}),
     ...(process.env.APP_ACTIVITY ? { 'appium:appActivity': process.env.APP_ACTIVITY } : {}),
+    'appium:deviceClass': deviceClass('Phone'),
     'appium:noReset': true,
     'appium:autoGrantPermissions': true,
     'appium:newCommandTimeout': 120,
@@ -53,6 +62,7 @@ const iosCapability = {
     // without launching an app (device-level smoke), and avoids the
     // "App with bundle identifier 'com.example.app' unknown" failure.
     ...(process.env.BUNDLE_ID ? { 'appium:bundleId': process.env.BUNDLE_ID } : {}),
+    'appium:deviceClass': deviceClass('iPhone'),
     'appium:noReset': true,
     'appium:newCommandTimeout': 120,
     'appium:wdaLaunchTimeout': 120000,

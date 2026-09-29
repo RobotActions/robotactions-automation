@@ -216,6 +216,10 @@ public final class DriverFactory {
         caps.setCapability("appium:automationName", "UiAutomator2");
         caps.setCapability("appium:browserName", "chrome");
         caps.setCapability("appium:newCommandTimeout", 180);
+        // Android and Android TV/Chromecast share this platformName — without
+        // a class filter this request could land on a Chromecast. DEVICE_CLASS
+        // overrides the default.
+        caps.setCapability("appium:deviceClass", Env.deviceClass("Phone"));
         caps.setCapability("ra:testsuite", Env.testSuite());
         return new RemoteWebDriver(buildExecutor(MOBILE_READ_TIMEOUT), caps);
     }
@@ -244,6 +248,9 @@ public final class DriverFactory {
         caps.setCapability("platformName", "iOS");
         caps.setCapability("appium:automationName", "XCUITest");
         caps.setCapability("appium:newCommandTimeout", 180);
+        // The iOS fleet can hold an iPad alongside the iPhones, and platformName
+        // alone matches both. DEVICE_CLASS overrides the default.
+        caps.setCapability("appium:deviceClass", Env.deviceClass("iPhone"));
         caps.setCapability("ra:testsuite", Env.testSuite());
         return new RemoteWebDriver(buildExecutor(MOBILE_READ_TIMEOUT), caps);
     }
@@ -254,6 +261,10 @@ public final class DriverFactory {
             .setAutomationName("UiAutomator2")
             .setDeviceName(Env.get("DEVICE_NAME", "Android Device"))
             .setUdid(Env.get("DEVICE_UDID", "{{DEVICE_UDID}}"));
+        // Android and Android TV/Chromecast share this platformName — without
+        // a class filter this request could land on a Chromecast. DEVICE_CLASS
+        // overrides the default.
+        options.setCapability("appium:deviceClass", Env.deviceClass("Phone"));
 
         String app = Env.get("APP_PATH", null);
         if (app != null && !app.equals("{{APP_PATH}}")) {
@@ -272,6 +283,9 @@ public final class DriverFactory {
             .setAutomationName("XCUITest")
             .setDeviceName(Env.get("DEVICE_NAME", "iPhone Simulator"))
             .setUdid(Env.get("DEVICE_UDID", "{{DEVICE_UDID}}"));
+        // The iOS fleet can hold an iPad alongside the iPhones, and platformName
+        // alone matches both. DEVICE_CLASS overrides the default.
+        options.setCapability("appium:deviceClass", Env.deviceClass("iPhone"));
 
         String app = Env.get("APP_PATH", null);
         if (app != null && !app.equals("{{APP_PATH}}")) {

@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
+import { baseUrl, deviceClass, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 // 6 parallel WDIO workers: 2 Android Chrome + 2 iOS Safari + 2 desktop Chrome.
@@ -23,11 +23,14 @@ export const config = {
     maxInstances: maxInstances(6),
 
     capabilities: [
-        // 2 Android Chrome (UiAutomator2 + appium:browserName=chrome)
+        // 2 Android Chrome (UiAutomator2 + appium:browserName=chrome). Android
+        // and Android TV/Chromecast share this platformName — without a class
+        // filter these could land on a Chromecast. DEVICE_CLASS overrides.
         {
             platformName: 'Android',
             'appium:automationName': 'uiautomator2',
             'appium:browserName': 'chrome',
+            'appium:deviceClass': deviceClass('Phone'),
             'goog:loggingPrefs': { browser: 'ALL' },
             ...RA_CAPS,
         },
@@ -35,20 +38,25 @@ export const config = {
             platformName: 'Android',
             'appium:automationName': 'uiautomator2',
             'appium:browserName': 'chrome',
+            'appium:deviceClass': deviceClass('Phone'),
             'goog:loggingPrefs': { browser: 'ALL' },
             ...RA_CAPS,
         },
-        // 2 iOS Safari (XCUITest lowercase to match registered stereotype)
+        // 2 iOS Safari (XCUITest lowercase to match registered stereotype).
+        // The iOS fleet can hold an iPad alongside the iPhones, and
+        // platformName alone matches both. DEVICE_CLASS overrides.
         {
             platformName: 'iOS',
             'appium:automationName': 'xcuitest',
             'appium:browserName': 'safari',
+            'appium:deviceClass': deviceClass('iPhone'),
             ...RA_CAPS,
         },
         {
             platformName: 'iOS',
             'appium:automationName': 'xcuitest',
             'appium:browserName': 'safari',
+            'appium:deviceClass': deviceClass('iPhone'),
             ...RA_CAPS,
         },
         // 2 desktop Chrome (Selenium static-grid container)

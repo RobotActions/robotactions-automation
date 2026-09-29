@@ -13,7 +13,7 @@
  * and showed in the dashboard as "no pass/fail was reported".
  */
 import 'dotenv/config';
-import { errorText, maxInstances } from './config';
+import { deviceClass, errorText, maxInstances } from './config';
 import { createHash } from 'node:crypto';
 
 export const config: WebdriverIO.Config = {
@@ -28,6 +28,10 @@ export const config: WebdriverIO.Config = {
         platformName: 'Android',
         'appium:automationName': 'UiAutomator2',
         'appium:newCommandTimeout': 180,
+        // Android and Android TV/Chromecast share this platformName — without
+        // a class filter this request could land on a Chromecast. DEVICE_CLASS
+        // overrides the default.
+        'appium:deviceClass': deviceClass('Phone'),
         'ra:autoFailDetect': false,
         'ra:networkCapture': true,
     } as WebdriverIO.Capabilities],

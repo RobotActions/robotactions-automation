@@ -55,6 +55,13 @@ runs against a mobile driver.
 
 Markers are additive tiers: `-m smoke` (critical path) ⊂ `-m sanity` ⊂ full run.
 
+**Picking a phone, not a TV or tablet.** Android and Android TV/Chromecast share one Appium
+`platformName` ("Android"), so without a class filter a plain `android`/`mobileweb` request can
+land on a Chromecast; the iOS fleet can likewise hold an iPad alongside the iPhones. Every mobile
+fixture therefore sends `appium:deviceClass` — `Phone` for `android`/`mobileweb`, `iPhone` for
+`ios`/`ios-mobileweb` — which the grid's slot matcher enforces. Override with `DEVICE_CLASS` if
+your fleet labels them differently.
+
 ### Mobile web notes
 
 - **The browser is requested as `appium:browserName`, not the W3C `browserName`.**

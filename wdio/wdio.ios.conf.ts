@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
+import { baseUrl, deviceClass, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 // 5 iOS Safari workers — single connected iPad serves them one at a time,
@@ -26,6 +26,10 @@ const iosCap = {
     platformName: 'iOS',
     'appium:automationName': 'xcuitest',
     'appium:browserName': 'safari',
+    // The iOS fleet can hold an iPad alongside the iPhones, and platformName
+    // alone matches both — without a class filter this request could land on
+    // an iPad. DEVICE_CLASS overrides the default.
+    'appium:deviceClass': deviceClass('iPhone'),
     ...RA_CAPS,
 };
 

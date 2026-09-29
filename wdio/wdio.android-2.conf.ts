@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
+import { baseUrl, deviceClass, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 const RUN_TIMESTAMP = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -21,6 +21,10 @@ const androidCap = {
     platformName: 'Android',
     'appium:automationName': 'UiAutomator2',
     'appium:browserName': 'chrome',
+    // Android and Android TV/Chromecast share this platformName — without a
+    // class filter this request could land on a Chromecast. DEVICE_CLASS
+    // overrides the default.
+    'appium:deviceClass': deviceClass('Phone'),
     ...RA_CAPS,
 };
 
