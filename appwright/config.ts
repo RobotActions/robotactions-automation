@@ -296,17 +296,25 @@ export function autoFailDetect(platform: PlatformName): boolean {
 }
 
 /**
- * Route to a set-top device by class rather than by pinning one udid.
+ * Route to the right device class instead of pinning one udid.
  *
  * The grid advertises `appium:deviceClass` on every slot (`TV` for Android TV and
- * Chromecast, `AppleTV`, `Phone`, `iPad`…). Sending it lets `PLATFORM=androidtv`
- * pick any free TV instead of requiring DEVICE_UDID, the same way a plain
- * `android` run picks any free handset.
+ * Chromecast, `AppleTV`, `Phone`, `iPad`…). `android` and `androidtv` share one
+ * Appium `platformName` ("android"), so without an explicit class a plain
+ * `android` run can be handed a Chromecast — observed on session e279e415…
+ * (2026-09-29, device 27101HFDD79RBV, `deviceClass: TV`) for what was meant to
+ * be a phone-oriented test. So a bare `android` (and `ios`, for the same
+ * reason) now asks for `Phone` explicitly; `androidtv` keeps asking for `TV`.
+ * `tvos` is left alone here — the grid already routes it to an Apple TV slot
+ * at the hub level regardless of `deviceClass` — and `DEVICE_CLASS` always
+ * overrides all of the above.
  */
 export function deviceClass(platform: PlatformName): string | undefined {
     const explicit = opt('DEVICE_CLASS');
     if (explicit) return explicit;
-    return platform === 'androidtv' ? 'TV' : undefined;
+    if (platform === 'androidtv') return 'TV';
+    if (platform === 'android' || platform === 'ios') return 'Phone';
+    return undefined;
 }
 
 /**
