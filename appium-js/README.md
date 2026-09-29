@@ -69,6 +69,7 @@ All device and server settings are controlled via environment variables (set in 
 | `GRID_HOST`     | `localhost:5555`     | Grid endpoint `host:port`. A standalone Appium server instead listens on `:4723`. |
 | `AUTH_TOKEN`    | _(empty)_            | Bearer token for authenticated grid endpoints    |
 | `RA_TESTSUITE`  | `appium-js`          | Test-suite label surfaced to the grid (`ra:testsuite`) |
+| `DEVICE_CLASS`  | `Phone` (android) / `iPhone` (ios) | Narrow the grid's choice by class (`Phone`, `iPhone`, `iPad`, `TV`, `AppleTV`…). Android and Android TV/Chromecast share one Appium `platformName`, so without this a plain `android` run could land on a Chromecast. |
 
 ## Reporting results to the grid
 

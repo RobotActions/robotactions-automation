@@ -7,7 +7,7 @@
  * Run: AUTH_TOKEN=... GRID_HOST=localhost:5555 npx wdio run wdio.mobileweb.conf.ts
  */
 // Environment is read only in ./config.ts — never process.env directly here.
-import { errorText, gridConnection, maxInstances, suiteName } from './config';
+import { deviceClass, errorText, gridConnection, maxInstances, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 
@@ -32,6 +32,10 @@ export const config: WebdriverIO.Config = {
         platformName: 'Android',
         'appium:automationName': 'UiAutomator2',
         'appium:newCommandTimeout': 180,
+        // Android and Android TV/Chromecast share this platformName — without
+        // a class filter this request could land on a Chromecast. DEVICE_CLASS
+        // overrides the default.
+        'appium:deviceClass': deviceClass('Phone'),
         // No appium:udid — the grid distributes the session to any free
         // handset. Pinning serialises every scenario onto one device and fails
         // outright whenever it is busy or offline.

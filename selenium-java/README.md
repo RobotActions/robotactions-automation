@@ -140,6 +140,12 @@ can live in `.env` instead of the command line:
 | `CI` | web | `true` forces Chrome headless; unset for headed debugging |
 | `RA_TESTSUITE` | all | suite label sent as the `ra:testsuite` capability |
 | `APP_PATH`, `DEVICE_UDID`, `PLATFORM_VERSION`, `BUNDLE_ID` | native app | native `@android` / `@ios` runs only |
+| `DEVICE_CLASS` | mobile | narrows the grid's choice by class (`Phone`, `iPhone`, `iPad`, `TV`, `AppleTV`…). Set automatically: `Phone` for `android`/`mobileweb`, `iPhone` for `ios`/`ios-mobileweb`. |
+
+**Every mobile platform sends `appium:deviceClass`.** Android and Android TV/Chromecast share
+one Appium `platformName`, so without a class filter a plain `android`/`mobileweb` request can
+land on a Chromecast; the iOS fleet can likewise hold an iPad alongside the iPhones. `DEVICE_CLASS`
+overrides the default if your fleet labels them differently.
 
 **The mobile-web platforms do not pin a device.** `createMobileWeb()` and
 `createIosMobileWeb()` send no `appium:udid`, so the grid distributes each session to any

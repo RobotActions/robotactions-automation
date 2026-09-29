@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
+import { baseUrl, deviceClass, errorText, gridConnection, maxInstances, releaseId, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 // Mixed Android + iOS mobile-browser fleet test. Spins up 5 concurrent
@@ -45,11 +45,14 @@ export const config = {
     maxInstances: maxInstances(4),
 
     capabilities: [
-        // 2 Android Chrome slots
+        // 2 Android Chrome slots. Android and Android TV/Chromecast share this
+        // platformName — without a class filter these could land on a
+        // Chromecast. DEVICE_CLASS overrides the default.
         {
             platformName: 'Android',
             'appium:automationName': 'uiautomator2',
             'appium:browserName': 'chrome',
+            'appium:deviceClass': deviceClass('Phone'),
             'goog:loggingPrefs': { browser: 'ALL' },
             ...RA_CAPS,
         },
@@ -57,21 +60,27 @@ export const config = {
             platformName: 'Android',
             'appium:automationName': 'uiautomator2',
             'appium:browserName': 'chrome',
+            'appium:deviceClass': deviceClass('Phone'),
             'goog:loggingPrefs': { browser: 'ALL' },
             ...RA_CAPS,
         },
         // 2 iOS Safari slots — Grid routes to the connected real iPad.
-        // 1 runs at a time; the other queues until the iPad slot frees.
+        // 1 runs at a time; the other queues until the iPad slot frees. The
+        // iOS fleet can hold an iPad alongside the iPhones, and platformName
+        // alone matches both, so these also filter by class; DEVICE_CLASS
+        // overrides if you actually want the iPad.
         {
             platformName: 'iOS',
             'appium:automationName': 'xcuitest',
             'appium:browserName': 'safari',
+            'appium:deviceClass': deviceClass('iPhone'),
             ...RA_CAPS,
         },
         {
             platformName: 'iOS',
             'appium:automationName': 'xcuitest',
             'appium:browserName': 'safari',
+            'appium:deviceClass': deviceClass('iPhone'),
             ...RA_CAPS,
         },
     ],

@@ -12,7 +12,7 @@
  * and showed in the dashboard as "no pass/fail was reported".
  */
 import 'dotenv/config';
-import { errorText, maxInstances } from './config';
+import { deviceClass, errorText, maxInstances } from './config';
 import { createHash } from 'node:crypto';
 
 export const config: WebdriverIO.Config = {
@@ -27,6 +27,9 @@ export const config: WebdriverIO.Config = {
         platformName: 'iOS',
         'appium:automationName': 'XCUITest',
         'appium:newCommandTimeout': 180,
+        // The iOS fleet can hold an iPad alongside the iPhones, and
+        // platformName alone matches both. DEVICE_CLASS overrides the default.
+        'appium:deviceClass': deviceClass('iPhone'),
         'ra:autoFailDetect': false,
         'ra:networkCapture': true,
     } as WebdriverIO.Capabilities],

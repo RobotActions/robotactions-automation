@@ -131,12 +131,19 @@ def mobile_web(request, grid_url: str, auth_token: str):
         opts.set_capability("browserName", "safari")
         opts.set_capability("platformName", "iOS")
         opts.set_capability("appium:automationName", "XCUITest")
+        # The iOS fleet can hold an iPad alongside the iPhones, and
+        # platformName alone matches both. DEVICE_CLASS overrides the default.
+        opts.set_capability("appium:deviceClass", os.environ.get("DEVICE_CLASS") or "iPhone")
         if _ios_udid_cycle is not None:
             opts.set_capability("appium:udid", next(_ios_udid_cycle))
     else:  # android (default)
         opts.set_capability("browserName", "chrome")
         opts.set_capability("platformName", "Android")
         opts.set_capability("appium:automationName", "UiAutomator2")
+        # Android and Android TV/Chromecast share this platformName — without
+        # a class filter this request could land on a Chromecast. DEVICE_CLASS
+        # overrides the default.
+        opts.set_capability("appium:deviceClass", os.environ.get("DEVICE_CLASS") or "Phone")
         if _udid_cycle is not None:
             opts.set_capability("appium:udid", next(_udid_cycle))
 

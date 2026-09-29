@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, errorText, gridConnection, maxInstances, releaseId, suiteName, tagExpression } from './config';
+import { baseUrl, deviceClass, errorText, gridConnection, maxInstances, releaseId, suiteName, tagExpression } from './config';
 import { createHash } from 'node:crypto';
 
 // Mobile-browser test config — Android Chrome via Appium UiAutomator2.
@@ -34,6 +34,10 @@ export const config = {
         platformName: 'Android',
         'appium:automationName': 'uiautomator2',
         'appium:browserName': 'chrome',
+        // Android and Android TV/Chromecast share this platformName — without
+        // a class filter this request could land on a Chromecast. DEVICE_CLASS
+        // overrides the default.
+        'appium:deviceClass': deviceClass('Phone'),
         // Standard Selenium-side options (Grid forwards them through Appium)
         'goog:loggingPrefs': { browser: 'ALL' },
         // Custom RA caps — proxy intercepts + strips these before forwarding

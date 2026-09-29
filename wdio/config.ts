@@ -98,6 +98,21 @@ export function suiteName(fallback = 'WebdriverIO'): string {
 }
 
 /**
+ * Route a mobile request to the right device class instead of pinning one udid.
+ *
+ * Android and Android TV/Chromecast share one Appium `platformName`
+ * ("Android"), and this template's iOS fleet can hold an iPad alongside the
+ * iPhones, so a bare `platformName` request can be handed a TV or a tablet
+ * instead of a phone. `appium:deviceClass` is what the grid's slot matcher
+ * enforces — every slot advertises one (`Phone`, `iPhone`, `iPad`, `TV`,
+ * `AppleTV`…). `DEVICE_CLASS` always overrides the per-platform default
+ * passed in here.
+ */
+export function deviceClass(defaultClass: string): string {
+    return str('DEVICE_CLASS', defaultClass);
+}
+
+/**
  * Text of a Cucumber scenario failure, for `ra:job-result=failed:<reason>`.
  *
  * `PickleResult.error` is typed `string` but arrives as an Error object for

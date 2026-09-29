@@ -25,9 +25,16 @@ const RA_CAPS = {
     'ra:autoFailDetect': false,
 };
 
+// Android and Android TV/Chromecast share one Appium platformName, and the
+// iOS fleet can hold an iPad alongside the iPhones — without a class filter
+// a "phone fleet" smoke slot could land on a TV or tablet instead. DEVICE_CLASS
+// overrides either default.
+const deviceClass = (defaultClass: string) => process.env.DEVICE_CLASS || defaultClass;
+
 const androidCap = {
     platformName: 'Android',
     'appium:automationName': 'uiautomator2',
+    'appium:deviceClass': deviceClass('Phone'),
     'appium:noReset': true,
     'appium:newCommandTimeout': 120,
     ...RA_CAPS,
@@ -36,6 +43,7 @@ const androidCap = {
 const iosCap = {
     platformName: 'iOS',
     'appium:automationName': 'xcuitest',
+    'appium:deviceClass': deviceClass('iPhone'),
     'appium:noReset': true,
     'appium:newCommandTimeout': 120,
     ...RA_CAPS,

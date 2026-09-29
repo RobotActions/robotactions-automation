@@ -9,7 +9,7 @@
  * included on iOS without needing a tag edit.
  */
 // Environment is read only in ./config.ts — never process.env directly here.
-import { errorText, gridConnection, maxInstances, suiteName } from './config';
+import { deviceClass, errorText, gridConnection, maxInstances, suiteName } from './config';
 import { createHash } from 'node:crypto';
 
 
@@ -31,6 +31,10 @@ export const config: WebdriverIO.Config = {
         platformName: 'iOS',
         'appium:automationName': 'XCUITest',
         'appium:newCommandTimeout': 180,
+        // The iOS fleet can hold an iPad alongside the iPhones, and platformName
+        // alone matches both — without a class filter this request could land
+        // on an iPad. DEVICE_CLASS overrides the default.
+        'appium:deviceClass': deviceClass('iPhone'),
         // No appium:udid — the grid distributes the session to any free iOS
         // device. Pinning serialises every scenario onto one handset and fails
         // whenever it is busy or offline.

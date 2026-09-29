@@ -87,6 +87,20 @@ def _apply_chrome_args(options) -> None:
         options.add_argument(arg)
 
 
+def _device_class(default: str) -> str:
+    """Route to the right device class instead of pinning one udid.
+
+    Android and iOS phones share a platformName with their TV counterparts
+    (Android TV/Chromecast report `platformName: Android`; the grid's iOS
+    fleet can include an iPad alongside iPhones), so a request with no class
+    filter can be handed any device that matches, not just a phone.
+    `appium:deviceClass` is what the grid's slot matcher enforces — every
+    slot advertises it (`Phone`, `iPhone`, `iPad`, `TV`, `AppleTV`). Default
+    picked per-platform below; DEVICE_CLASS overrides it for every platform.
+    """
+    return os.environ.get("DEVICE_CLASS") or default
+
+
 def _apply_ra_testsuite(options) -> None:
     """Attach the ra:testsuite vendor cap so the grid persists it on
     sessions.test_suite — drives the Reports tab's Test Suite filter +
@@ -371,8 +385,13 @@ def driver(request, platform: str, grid_url: str, auth_token: str) -> WebDriver:
             # hamburger visible.
             #
             # This is a class filter, not a udid pin, so tests still spread
-            # across every iPhone in the fleet.
-            options.set_capability("appium:deviceClass", "iPhone")
+            # across every iPhone in the fleet. DEVICE_CLASS overrides it.
+            options.set_capability("appium:deviceClass", _device_class("iPhone"))
+        else:
+            # Android and Android TV both report `platformName: Android`, so
+            # without a class filter this request could land on a Chromecast.
+            # DEVICE_CLASS overrides it.
+            options.set_capability("appium:deviceClass", _device_class("Phone"))
         options.set_capability("appium:newCommandTimeout", 180)
         _apply_ra_testsuite(options)
 
@@ -397,6 +416,9 @@ def driver(request, platform: str, grid_url: str, auth_token: str) -> WebDriver:
         options.automation_name = "UiAutomator2"
         options.device_name = os.environ.get("DEVICE_NAME", "Android Device")
         options.udid = os.environ.get("DEVICE_UDID", "{{DEVICE_UDID}}")
+        # Android and Android TV share this platformName — without a class
+        # filter this request could land on a Chromecast. DEVICE_CLASS overrides.
+        options.set_capability("appium:deviceClass", _device_class("Phone"))
         app = os.environ.get("APP_PATH")
         if app and app != "{{APP_PATH}}":
             options.app = app
@@ -421,6 +443,9 @@ def driver(request, platform: str, grid_url: str, auth_token: str) -> WebDriver:
         options.automation_name = "XCUITest"
         options.device_name = os.environ.get("DEVICE_NAME", "iPhone Simulator")
         options.udid = os.environ.get("DEVICE_UDID", "{{DEVICE_UDID}}")
+        # The iOS fleet holds an iPad alongside the iPhones, and platformName
+        # alone matches both. DEVICE_CLASS overrides.
+        options.set_capability("appium:deviceClass", _device_class("iPhone"))
         app = os.environ.get("APP_PATH")
         if app and app != "{{APP_PATH}}":
             options.app = app

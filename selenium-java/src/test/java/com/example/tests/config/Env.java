@@ -83,6 +83,21 @@ public final class Env {
     }
 
     /**
+     * Route a mobile request to the right device class instead of pinning one udid.
+     *
+     * <p>Android and Android TV/Chromecast share one Appium {@code platformName}
+     * ("Android"), and the iOS fleet can hold an iPad alongside the iPhones, so a
+     * bare {@code platformName} request can be handed a TV or a tablet instead of
+     * a phone. {@code appium:deviceClass} is what the grid's slot matcher
+     * enforces — every slot advertises one ({@code Phone}, {@code iPhone},
+     * {@code iPad}, {@code TV}, {@code AppleTV}…). {@code DEVICE_CLASS} always
+     * overrides the per-platform default passed in here.
+     */
+    public static String deviceClass(String defaultClass) {
+        return get("DEVICE_CLASS", defaultClass);
+    }
+
+    /**
      * First UDID from RA_DEVICE_UDIDS (comma-separated).
      * Used to pin Android mobileweb sessions to a real device.
      */

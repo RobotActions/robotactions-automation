@@ -96,6 +96,11 @@ to get wrong here:
   (`UND_ERR_HEADERS_TIMEOUT` on `POST /session`).
 - **No `appium:udid`.** The grid distributes each session to any free handset; pinning
   serialises the suite onto one device and fails whenever it is busy.
+- **Picking a phone, not a TV or tablet.** Android and Android TV/Chromecast share one Appium
+  `platformName` ("Android"), so without a class filter a plain android request can land on a
+  Chromecast; the iOS fleet can likewise hold an iPad alongside the iPhones. Every mobile config
+  therefore sends `appium:deviceClass` — `Phone` for Android, `iPhone` for iOS — which the grid's
+  slot matcher enforces. Override with `DEVICE_CLASS` if your fleet labels them differently.
 - **Take the first *displayed* match.** Several controls (theme toggle, language switcher,
   sign-in CTA) render twice — a hidden desktop node and a visible mobile one — so `$(...)`,
   which returns the first match regardless of visibility, times out on them. The page object
