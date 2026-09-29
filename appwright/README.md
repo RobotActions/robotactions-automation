@@ -186,8 +186,8 @@ reports `platformName: Android` like every phone, so the template sends
 `appium:deviceClass: TV` and the grid hands over any free TV. Without that, an
 `androidtv` run would cheerfully land on a phone — and the same sharing cuts
 the other way: a plain `android` run sends `appium:deviceClass: Phone` for the
-same reason, so it cannot be handed a Chromecast. `ios` sends `Phone` too, as
-a defensive default (the grid already keeps `tvos` Apple TV slots out of plain
+same reason, so it cannot be handed a Chromecast. `ios` sends `iPhone` — the
+class the grid advertises for iOS phones — as a defensive default (the grid already keeps `tvos` Apple TV slots out of plain
 `ios` requests at the hub level, but nothing stops a fleet's own `ios`-labelled
 inventory from including a TV). `DEVICE_CLASS` overrides all of this.
 
@@ -221,7 +221,7 @@ file that reads it.
 | `AUTH_TOKEN` | Grid bearer token. Sent as an `Authorization` header on every request. |
 | `PLATFORM` | `android`, `ios`, `tvos`, `androidtv`, or a combination — one Playwright project each. |
 | `DEVICE_UDID` | Pin one device. Normally leave unset and let the grid choose. |
-| `DEVICE_CLASS` | Narrow the grid's choice by class (`TV`, `Phone`, `AppleTV`…). Set automatically: `Phone` for `android`/`ios`, `TV` for `androidtv`. |
+| `DEVICE_CLASS` | Narrow the grid's choice by class (`TV`, `Phone`, `AppleTV`…). Set automatically: `Phone` for `android`, `iPhone` for `ios`, `TV` for `androidtv`. Use `iPad` to target tablets. |
 | `APP_ID` | A build in your RobotActions **App Library**, by upload id (dashboard → Apps, `POST /apps/import-url`, or the `app_upload` MCP tool). The grid fetches it with this run's token — nothing to host. Leave unset (and `APP_PATH` unset) for a device-level session. |
 | `APP_PATH` | The older form: an https URL the grid can download, **or a path on the grid host**. `APP_ID` wins when both are set. |
 | `APP_PACKAGE` / `BUNDLE_ID` | For activating, terminating, and iOS clipboard reads. |
