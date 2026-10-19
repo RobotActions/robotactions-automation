@@ -20,9 +20,54 @@ TAG="${3:-@load}"
 
 cd "$(dirname "$0")"
 
-if [ -f .env ]; then
-  set -a; . ./.env; set +a
-fi
+# Load .env WITHOUT clobbering variables the caller already set.
+#
+# `set -a; . ./.env` exports every assignment in the file, overwriting anything
+# passed on the command line. So `PLATFORM=mobileweb ./load.sh` silently ran as
+# PLATFORM=web (the value in .env) — three "mobile" lanes all executed desktop
+# Chrome, the grid never received a single Android/iOS session, and the
+# mobile-only scenarios failed looking for a hamburger menu that does not exist
+# at 1920px. The run reported failures that had nothing to do with what it
+# claimed to be testing.
+#
+# dotenv's own rule is "never override an already-set variable"; this matches
+# it. Caller env wins, .env fills the gaps.
+# Sources are tried in order; the FIRST definition of a key wins, and the
+# caller's environment beats all of them. .properties is supported because the
+# Java/TestNG templates in this repo use it — same KEY=VALUE grammar, so one
+# loader serves both and a team can standardise on either.
+_ra_load_config() {
+  [ -f "$1" ] || return 0
+  while IFS= read -r _line || [ -n "$_line" ]; do
+    case "$_line" in
+      ''|'#'*|'!'*) continue ;;                 # blank / comment (! is .properties)
+    esac
+    case "$_line" in
+      *=*) : ;;
+      *) continue ;;                            # no '=' — not an assignment
+    esac
+    _key=${_line%%=*}
+    _key=${_key%"${_key##*[![:space:]]}"}       # trim trailing space (properties style)
+    _key=${_key#"${_key%%[![:space:]]*}"}       # trim leading space
+    case "$_key" in
+      *[!A-Za-z0-9_]*|'') continue ;;           # not a usable shell name
+    esac
+    if [ -z "${!_key+x}" ]; then                # only when unset — caller wins
+      _val=${_line#*=}
+      _val=${_val#"${_val%%[![:space:]]*}"}     # trim leading space
+      _val=${_val%\"}; _val=${_val#\"}          # strip surrounding quotes
+      _val=${_val%\'}; _val=${_val#\'}
+      export "$_key=$_val"
+    fi
+  done < "$1"
+  unset _line _key _val
+}
+
+# RA_ENV_FILE pins one explicitly; otherwise the usual names, first hit wins.
+for _f in ${RA_ENV_FILE:-} .env .properties test.properties config.properties; do
+  _ra_load_config "$_f"
+done
+unset _f
 
 ts="$(date +%Y%m%d-%H%M%S)"
 out="reports/load-${ts}"
@@ -31,6 +76,7 @@ mkdir -p "$out"
 echo "[load] N=$N M=$M tag=$TAG target=${BASE_URL:-?} grid=${GRID_HOST:-?}"
 
 t0=$(date +%s)
+set +e  # keep the runner's exit status; `|| true` threw it away
 mvn -q test \
   -Dtest=RunCucumberTest \
   -DforkCount="$N" \
@@ -40,7 +86,9 @@ mvn -q test \
   -Dcucumber.execution.parallel.config.strategy=fixed \
   -Dcucumber.execution.parallel.config.fixed.parallelism="$N" \
   -Dload.repeats="$M" \
-  2>&1 | tee "$out/run.log" || true
+  2>&1 | tee "$out/run.log"
+status=${PIPESTATUS[0]}
+set -e
 elapsed=$(( $(date +%s) - t0 ))
 
 # Cucumber-JVM counters
@@ -66,3 +114,4 @@ if [ -f target/cucumber-report.html ]; then
 fi
 
 echo "[load] done. log: $out/run.log"
+exit "$status"
