@@ -92,6 +92,14 @@ export function gridConnection(options: GridOptions = {}): GridConnection {
     };
 }
 
+/**
+ * `RA_NETWORK_CAPTURE=true` records the request waterfall into the session's
+ * Network tab. Off by default: capture costs disk on the grid.
+ */
+export function networkCapture(): boolean {
+    return ['1', 'true', 'yes'].includes(str('RA_NETWORK_CAPTURE').toLowerCase());
+}
+
 /** Suite label persisted by the grid as `sessions.test_suite`. */
 export function suiteName(fallback = 'WebdriverIO'): string {
     return str('RA_TESTSUITE', fallback);
@@ -212,8 +220,9 @@ export function isCi(): boolean {
 export async function reportTestName(name: string): Promise<void> {
     const trimmed = name.slice(0, 200);
     try {
-        await (globalThis as { browser?: { execute: (script: string) => Promise<unknown> } }).browser?.execute(
+        await (globalThis as { browser?: { executeScript: (script: string, args: unknown[]) => Promise<unknown> } }).browser?.executeScript(
             `ra:job-name=${trimmed}`,
+            [],
         );
     } catch (err) {
         console.warn('[ra-report] failed to report test name:', (err as Error)?.message ?? err);
@@ -245,8 +254,9 @@ export function createResultTracker() {
                           failureCount > 1 ? `${failureCount} failed. First: ${firstFailure}` : firstFailure
                       ).slice(0, 200)}`;
             try {
-                await (globalThis as { browser?: { execute: (script: string) => Promise<unknown> } }).browser?.execute(
+                await (globalThis as { browser?: { executeScript: (script: string, args: unknown[]) => Promise<unknown> } }).browser?.executeScript(
                     verb,
+                    [],
                 );
             } catch (err) {
                 console.warn('[ra-report] failed to report test result:', (err as Error)?.message ?? err);

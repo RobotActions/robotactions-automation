@@ -147,6 +147,7 @@ public final class DriverFactory {
         // empty Suite column and could not be filtered or rolled up — it was
         // indistinguishable from the untagged internal traffic.
         options.setCapability("ra:testsuite", Env.testSuite());
+        if (Env.networkCapture()) options.setCapability("ra:networkCapture", true);
 
         // One-shot retry on createSession failure for two known-transient
         // proxy responses:
@@ -221,6 +222,7 @@ public final class DriverFactory {
         // overrides the default.
         caps.setCapability("appium:deviceClass", Env.deviceClass("Phone"));
         caps.setCapability("ra:testsuite", Env.testSuite());
+        if (Env.networkCapture()) caps.setCapability("ra:networkCapture", true);
         return new RemoteWebDriver(buildExecutor(MOBILE_READ_TIMEOUT), caps);
     }
 
@@ -252,6 +254,7 @@ public final class DriverFactory {
         // alone matches both. DEVICE_CLASS overrides the default.
         caps.setCapability("appium:deviceClass", Env.deviceClass("iPhone"));
         caps.setCapability("ra:testsuite", Env.testSuite());
+        if (Env.networkCapture()) caps.setCapability("ra:networkCapture", true);
         return new RemoteWebDriver(buildExecutor(MOBILE_READ_TIMEOUT), caps);
     }
 

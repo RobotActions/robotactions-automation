@@ -1,6 +1,6 @@
 {
   "name": "wdio-robotactions-service",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "WebdriverIO service for the RobotActions grid — real Android and iOS devices plus browser nodes behind one endpoint, with automatic test-status reporting.",
   "type": "module",
   "main": "./dist/index.js",
