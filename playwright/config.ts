@@ -169,9 +169,16 @@ export function gridConnectOptions(): ConnectOptions | undefined {
     // silently drops custom HTTP headers on ws:// upgrades and the grid's auth
     // gate then rejects the upgrade with 401. Verified against playwright-core
     // 1.59.x; the server accepts ?token= on the WS upgrade.
-    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    // The suite rides the same query string (the grid reads `ra:testsuite`
+    // there); without it these sessions landed in History unlabelled. There is
+    // no per-test name: one connection serves every test a worker runs.
+    // `ra:networkCapture` is not sent: the grid captures network traffic only
+    // for sessions created through the WebDriver endpoint (selenium-remote).
+    const params = new URLSearchParams();
+    if (token) params.set('token', token);
+    params.set('ra:testsuite', suiteName());
     const scheme = target.secure ? 'wss' : 'ws';
-    return { wsEndpoint: `${scheme}://${target.hostPort}/playwright/${gridBrowser()}${query}` };
+    return { wsEndpoint: `${scheme}://${target.hostPort}/playwright/${gridBrowser()}?${params}` };
 }
 
 /** One-line description of where tests will run — printed by the configs. */

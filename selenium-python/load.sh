@@ -87,6 +87,7 @@ PYTEST="python3 -m pytest"
 if [ -x ".venv/bin/pytest" ]; then PYTEST=".venv/bin/python -m pytest"; fi
 
 t0=$(date +%s)
+set +e  # keep the runner's exit status; `|| true` threw it away
 $PYTEST tests/step_defs/ \
   -v \
   -n "$N" \
@@ -95,7 +96,9 @@ $PYTEST tests/step_defs/ \
   --junitxml="$out/junit.xml" \
   --html="$out/report.html" \
   --self-contained-html \
-  2>&1 | tee "$out/run.log" || true
+  2>&1 | tee "$out/run.log"
+status=${PIPESTATUS[0]}
+set -e
 elapsed=$(( $(date +%s) - t0 ))
 
 # Counters from pytest output. pytest-bdd emits PASS/FAIL via the test
@@ -116,3 +119,4 @@ timeouts=$(grep -cE "Timeout|TimeoutException|did not respond" "$out/run.log" ||
 } | tee "$out/summary.txt"
 
 echo "[load] done. log: $out/run.log  junit: $out/junit.xml  html: $out/report.html"
+exit "$status"
