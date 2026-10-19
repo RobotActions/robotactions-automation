@@ -42,6 +42,14 @@ export function suiteName(): string {
     return str('RA_TESTSUITE', 'Playwright');
 }
 
+/**
+ * `RA_NETWORK_CAPTURE=true` records the request waterfall into the session's
+ * Network tab (selenium-remote mode). Off by default: capture costs disk.
+ */
+export function networkCapture(): boolean {
+    return ['1', 'true', 'yes'].includes(str('RA_NETWORK_CAPTURE').toLowerCase());
+}
+
 /** Worker count: `WORKERS` wins, else 1 on CI and 5 locally. */
 export function workers(): number {
     const explicit = int('WORKERS', -1);
@@ -148,7 +156,10 @@ export function gridConnectOptions(): ConnectOptions | undefined {
             process.env.SELENIUM_REMOTE_HEADERS = JSON.stringify({ Authorization: `Bearer ${token}` });
         }
         if (str('SELENIUM_REMOTE_URL') && !str('SELENIUM_REMOTE_CAPABILITIES')) {
-            process.env.SELENIUM_REMOTE_CAPABILITIES = JSON.stringify({ 'ra:testsuite': suiteName() });
+            process.env.SELENIUM_REMOTE_CAPABILITIES = JSON.stringify({
+                'ra:testsuite': suiteName(),
+                ...(networkCapture() ? { 'ra:networkCapture': true } : {}),
+            });
         }
         return undefined;
     }

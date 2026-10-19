@@ -155,8 +155,8 @@ export default class RobotActionsService {
                 : this.firstFailure || 'All tests passed';
 
         try {
-            await (globalThis as { browser?: { execute: (script: string, arg: unknown) => Promise<unknown> } })
-                .browser?.execute('ra:setTestStatus', { status, reason });
+            await (globalThis as { browser?: { executeScript: (script: string, args: unknown[]) => Promise<unknown> } })
+                .browser?.executeScript('ra:setTestStatus', [{ status, reason }]);
         } catch (error) {
             // Reporting is best-effort: a grid that has already torn the session
             // down must not turn a green suite red.

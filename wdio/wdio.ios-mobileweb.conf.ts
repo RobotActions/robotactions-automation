@@ -76,8 +76,8 @@ export const config: WebdriverIO.Config = {
     beforeScenario: async function (world: { pickle: { name: string } }) {
         const name = world.pickle.name.slice(0, 200);
         const testId = `WDIO-IOS-MOBILEWEB-${createHash('sha1').update(name).digest('hex').slice(0, 8).toUpperCase()}`;
-        try { await (globalThis as any).browser.execute(`ra:job-name=${name}`); } catch (_e) { /* best-effort */ }
-        try { await (globalThis as any).browser.execute(`ra:test-id=${testId}`); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:job-name=${name}`, []); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:test-id=${testId}`, []); } catch (_e) { /* best-effort */ }
     },
 
     afterStep: async function (_step: unknown, _scenario: unknown, result: { passed: boolean }) {
@@ -95,6 +95,6 @@ export const config: WebdriverIO.Config = {
         const verb = result && result.passed
             ? 'ra:job-result=passed'
             : `ra:job-result=failed:${errorText(result && result.error).slice(0, 200)}`;
-        try { await (globalThis as any).browser.execute(verb); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(verb, []); } catch (_e) { /* best-effort */ }
     },
 };

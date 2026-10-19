@@ -99,8 +99,8 @@ export const config = {
         const testId = `WDIO-MOBILE-${createHash('sha1').update(name).digest('hex').slice(0, 8).toUpperCase()}`;
         // Magic-string form works on every WebDriver client; structured form
         // also works but adds a serialize step.
-        try { await (globalThis as any).browser.execute(`ra:job-name=${name}`); } catch (_e) { /* best-effort */ }
-        try { await (globalThis as any).browser.execute(`ra:test-id=${testId}`); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:job-name=${name}`, []); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:test-id=${testId}`, []); } catch (_e) { /* best-effort */ }
     },
 
     afterStep: async function (_step: unknown, _scenario: unknown, result: { passed: boolean }) {
@@ -141,10 +141,10 @@ export const config = {
             // could not classify the scenario, and treating that as a failure
             // would cry wolf on every framework hiccup.
             if (result?.passed !== false) {
-                await (globalThis as any).browser.execute('ra:job-result=passed');
+                await (globalThis as any).browser.executeScript('ra:job-result=passed', []);
             } else {
                 const reason = errorText(result?.error).slice(0, 256);
-                await (globalThis as any).browser.execute(`ra:job-result=failed:${reason}`);
+                await (globalThis as any).browser.executeScript(`ra:job-result=failed:${reason}`, []);
             }
         } catch (_e) { /* best-effort — never fail a scenario over reporting */ }
         try { await (globalThis as any).browser.reloadSession(); } catch (_e) { /* best-effort */ }

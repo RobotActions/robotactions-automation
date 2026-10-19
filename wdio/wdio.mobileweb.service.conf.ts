@@ -56,8 +56,8 @@ export const config: WebdriverIO.Config = {
     beforeScenario: async function (world: { pickle: { name: string } }) {
         const name = world.pickle.name.slice(0, 200);
         const testId = `WDIO-MOBILEWEB-${createHash('sha1').update(name).digest('hex').slice(0, 8).toUpperCase()}`;
-        try { await (globalThis as any).browser.execute(`ra:job-name=${name}`); } catch (_e) { /* best-effort */ }
-        try { await (globalThis as any).browser.execute(`ra:test-id=${testId}`); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:job-name=${name}`, []); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:test-id=${testId}`, []); } catch (_e) { /* best-effort */ }
     },
 
     /**
@@ -76,10 +76,10 @@ export const config: WebdriverIO.Config = {
             // could not classify the scenario, and treating that as a failure
             // would cry wolf on every framework hiccup.
             if (result?.passed !== false) {
-                await (globalThis as any).browser.execute('ra:job-result=passed');
+                await (globalThis as any).browser.executeScript('ra:job-result=passed', []);
             } else {
                 const reason = errorText(result?.error).slice(0, 256);
-                await (globalThis as any).browser.execute(`ra:job-result=failed:${reason}`);
+                await (globalThis as any).browser.executeScript(`ra:job-result=failed:${reason}`, []);
             }
         } catch (_e) { /* best-effort — never fail a scenario over reporting */ }
     },

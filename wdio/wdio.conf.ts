@@ -1,5 +1,5 @@
 // Environment is read only in ./config.ts — never process.env directly here.
-import { baseUrl, createResultTracker, gridConnection, isCi, maxInstances, reportTestName, suiteName } from './config';
+import { baseUrl, createResultTracker, gridConnection, isCi, maxInstances, networkCapture, reportTestName, suiteName } from './config';
 
 // One session per worker for the whole run of feature files it's handed —
 // tracked here so the verdict survives across every scenario. See the
@@ -19,6 +19,7 @@ export const config = {
     capabilities: [{
         browserName: 'chrome',
         'ra:testsuite': suiteName(),
+        ...(networkCapture() ? { 'ra:networkCapture': true } : {}),
         'goog:chromeOptions': {
             args: isCi() ? ['--headless', '--no-sandbox', '--disable-gpu'] : [],
         },

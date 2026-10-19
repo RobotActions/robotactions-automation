@@ -110,6 +110,10 @@ def _apply_ra_testsuite(options) -> None:
     suite = os.environ.get("RA_TESTSUITE")
     if suite:
         options.set_capability("ra:testsuite", suite)
+    # RA_NETWORK_CAPTURE=true records the request waterfall into the session's
+    # Network tab. Off by default: capture costs disk on the grid.
+    if os.environ.get("RA_NETWORK_CAPTURE", "").lower() in ("1", "true", "yes"):
+        options.set_capability("ra:networkCapture", True)
 
 
 # ─── Result reporting ────────────────────────────────────────────────────────

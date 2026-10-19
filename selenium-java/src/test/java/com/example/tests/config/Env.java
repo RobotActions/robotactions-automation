@@ -77,6 +77,15 @@ public final class Env {
         return !v.isBlank() && !"false".equalsIgnoreCase(v) && !"0".equals(v);
     }
 
+    /**
+     * RA_NETWORK_CAPTURE=true records the request waterfall into the session's
+     * Network tab. Off by default: capture costs disk on the grid.
+     */
+    public static boolean networkCapture() {
+        String v = get("RA_NETWORK_CAPTURE", "");
+        return "true".equalsIgnoreCase(v) || "1".equals(v) || "yes".equalsIgnoreCase(v);
+    }
+
     /** The RA test-suite label, sent as ra:testsuite capability. */
     public static String testSuite() {
         return get("RA_TESTSUITE", "Java Selenium");

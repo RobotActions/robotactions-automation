@@ -107,8 +107,8 @@ export const config = {
         const cid = (globalThis as any).browser?.capabilities?.platformName || 'device';
         const name = `${world.pickle.name} [${cid}]`.slice(0, 200);
         const testId = `SMOKE-${createHash('sha1').update(name + Math.random()).digest('hex').slice(0, 8).toUpperCase()}`;
-        try { await (globalThis as any).browser.execute(`ra:job-name=${name}`); } catch (_e) { /* best-effort */ }
-        try { await (globalThis as any).browser.execute(`ra:test-id=${testId}`); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:job-name=${name}`, []); } catch (_e) { /* best-effort */ }
+        try { await (globalThis as any).browser.executeScript(`ra:test-id=${testId}`, []); } catch (_e) { /* best-effort */ }
     },
 
     afterStep: async function (_step: unknown, _scenario: unknown, result: { passed: boolean }) {
