@@ -102,7 +102,7 @@ export const config: WebdriverIO.Config = {
 
 Complete runnable projects — page objects, BDD features, reporting and a CI
 entry point — live in
-[robotactions-automation](https://github.com/krishtoautomate/robotactions-automation)
+[robotactions-automation](https://github.com/RobotActions/robotactions-automation)
 for WebdriverIO, Appium, Playwright, Selenium and more.
 
 ## License
