@@ -51,6 +51,15 @@ const SELECTORS = {
 
     // Any dropdown item — the "is this menu actually open" sentinel.
     anyMenuItem: "//*[@role='menuitem' or @role='option']",
+
+    // The analytics consent bar: `fixed bottom-0`, about a third of a phone's
+    // viewport. Decline rather than Accept — a test run should not opt itself
+    // into analytics, and the bar goes away either way.
+    consentDecline: "//*[@role='region']//button[normalize-space()='Decline']",
+    // The chatbot greeting bubble: a second fixed overlay, bottom-right, that
+    // arrives on a timer rather than at load. Its dismiss control is icon-only.
+    chatGreetingDismiss:
+        "//div[contains(@class,'fixed') and contains(@class,'bottom-[90px]')]//button[@aria-label]",
 } as const;
 
 /**
@@ -149,10 +158,64 @@ class RobotActionsMobileWebPage {
 
     async openHomePage(): Promise<void> {
         await browser.url(HOME_URL);
+        await this.dismissOverlays();
     }
 
     async openPath(path: string): Promise<void> {
         await browser.url(`${HOME_URL}${path}`);
+        await this.dismissOverlays();
+    }
+
+    // ── Overlays ──────────────────────────────────────────────────────────
+
+    /**
+     * Clears the two fixed overlays that cover content on a phone.
+     *
+     * The consent bar covers the lower third of the viewport, so a control
+     * scrolled to the centre of a shorter screen sits under it and the tap
+     * lands on the bar instead:
+     *
+     *   AccordionTrigger is not clickable at point (205, 569). Other element
+     *   would receive the click: <p class="mt-2 text-sm leading-relaxed …">
+     *
+     * That is why the FAQ scenarios failed on a Galaxy S20+ and Note9 but
+     * passed on a taller LG G9. Answering both overlays is what a visitor does
+     * first anyway. Mirrors `dismiss_overlays()` in the selenium-python
+     * template and `dismissOverlays()` in the playwright one.
+     *
+     * Once per browser session: the answers are stored, so neither overlay
+     * renders again, and probing on every page open cost ~10s per scenario
+     * (a Note9 run went from 1m43 to 4m29 before this guard).
+     */
+    async dismissOverlays(): Promise<void> {
+        if (this.overlaysCheckedFor === browser.sessionId) return;
+        await this.dismissIfPresent(SELECTORS.consentDecline);
+        await this.dismissIfPresent(SELECTORS.chatGreetingDismiss);
+        this.overlaysCheckedFor = browser.sessionId;
+    }
+
+    private overlaysCheckedFor?: string;
+
+    /**
+     * Clicks a dismiss control if it shows up, then CONFIRMS the overlay went.
+     *
+     * The probe is SHORT_TIMEOUT, not longer: a real iPhone keeps the stored
+     * consent choice between sessions, so after the first run the bar never
+     * renders and a long wait would be paid by every scenario. If a WebDriver
+     * click leaves it showing (iOS Safari can ignore one), a script click
+     * follows. Best-effort: an overlay is never the thing under test.
+     */
+    private async dismissIfPresent(selector: string): Promise<void> {
+        try {
+            if (!(await this.isAnyDisplayed(selector))) return;
+            const control = await this.firstDisplayed(selector, SHORT_TIMEOUT);
+            await control.click();
+            if (!(await this.isAnyDisplayed(selector, 1000))) return;
+            const still = await this.firstDisplayed(selector, SHORT_TIMEOUT);
+            await browser.execute((el: HTMLElement) => el.click(), still as unknown as HTMLElement);
+        } catch {
+            /* best-effort */
+        }
     }
 
     async waitForHydration(): Promise<void> {
