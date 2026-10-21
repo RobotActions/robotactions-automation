@@ -1,4 +1,4 @@
-import { gridConnection, resolveToken, type GridConnection, type RobotActionsOptions } from './connection';
+import { gridConnection, resolveToken, type GridConnection, type RobotActionsOptions } from './connection.js';
 
 export { gridConnection, resolveToken };
 export type { GridConnection, RobotActionsOptions };
