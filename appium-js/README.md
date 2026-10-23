@@ -85,7 +85,7 @@ failure. Reporting is best-effort and never fails the run.
 
 | Command              | Description                          |
 |----------------------|--------------------------------------|
-| `npm test`           | Run all Cucumber BDD feature files   |
+| `npm test`           | Run the Cucumber features. With no `APP_PACKAGE` / `BUNDLE_ID` / `APP_PATH` set, only the `@device` smoke runs; set one to include the app features |
 | `npm run test:regular` | Run Mocha specs in `test/specs/`   |
 | `npm run test:debug` | Run with Node inspector attached     |
 
