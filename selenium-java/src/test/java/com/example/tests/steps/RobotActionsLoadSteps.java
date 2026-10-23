@@ -234,6 +234,13 @@ public class RobotActionsLoadSteps {
         ScenarioContext.get().setInitialTheme(current);
     }
 
+    /** Pick Light / Dark / System from the theme menu. The control is a
+     *  dropdown: clicking the trigger alone leaves the theme untouched. */
+    @When("I select the {string} theme")
+    public void selectTheme(String choice) {
+        page().selectTheme(choice);
+    }
+
     @When("I wait {int} milliseconds for the theme transition")
     public void waitForThemeTransition(int ms) {
         try { Thread.sleep(ms); } catch (InterruptedException ie) {

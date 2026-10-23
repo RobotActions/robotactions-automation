@@ -19,8 +19,10 @@ Two flags do all the work:
 | `-Dcucumber.filter.tags="…"` | selects which scenarios run |
 
 `PLATFORM` (env var, not a `-D` flag) picks the driver — `web`, `mobileweb`,
-`ios-mobileweb`, `android`, `ios`. Pair it with a matching tag filter, or a web
-scenario will run against a mobile driver:
+`ios-mobileweb`, `android`, `ios`. Scenarios tagged for another platform are
+skipped before a browser starts (`@mobileweb` runs only on `mobileweb` /
+`ios-mobileweb`, `@web` only on `web`), so a plain `mvn test` is safe. A tag
+filter narrows the run further:
 
 ```bash
 # Desktop Chrome via the Grid

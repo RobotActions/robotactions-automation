@@ -169,7 +169,12 @@ async function clickElementByText(opts: { fragment: string; tags?: string[]; sco
             const root = scope ? document.querySelector(scope) : document;
             if (!root) return false;
             const els = Array.from(root.querySelectorAll(tagList.join(',')));
-            const hit = els.find((el) => ((el.textContent || '').trim() === frag));
+            // Exact text first; then the same text plus a trailing badge. The
+            // site marks new items with one ("AI Test Agent" renders as
+            // "AI Test AgentNEW"), which broke exact matching on 2026-10-23.
+            const text = (el: Element) => (el.textContent || '').trim();
+            const hit = els.find((el) => text(el) === frag)
+                || els.find((el) => text(el).startsWith(frag) && /^\s*[A-Z]{2,6}$/.test(text(el).slice(frag.length)));
             if (!hit) return false;
             (hit as HTMLElement).scrollIntoView({ block: 'center' });
             (hit as HTMLElement).click();
@@ -236,10 +241,32 @@ When('I click the {string} nav button', async function (this: RaWorld, label: st
 });
 
 When('I click the {string} button', async function (this: RaWorld, label: string) {
+    // A real WebDriver click, not el.click(): the header's theme and language
+    // buttons open Radix menus on pointerdown, which a scripted click never
+    // fires, so the menu stayed shut and both scenarios failed.
+    // The header renders each control twice (desktop bar + mobile menu) and
+    // only one copy is displayed at a given width, so take the displayed one.
+    const selector = `//button[normalize-space()="${label}"] | //a[normalize-space()="${label}"]`;
+    let button: WebdriverIO.Element | undefined;
     await browser.waitUntil(
-        () => clickElementByText({ fragment: label, tags: ['button', 'a'] }),
-        { timeout: 10_000, timeoutMsg: `Button/link "${label}" not found / not clickable` },
+        async () => {
+            for (const el of await $$(selector)) {
+                if (await el.isDisplayed()) { button = el; return true; }
+            }
+            return false;
+        },
+        { timeout: 10_000, timeoutMsg: `Button/link "${label}" not found / not displayed` },
     );
+    await button!.click();
+    // "Toggle theme" opens a Light/Dark/System menu rather than flipping the
+    // theme. Pick the opposite of the current one so "the page theme should
+    // have changed" has a real change to observe. Mirrors the playwright template.
+    if (label === 'Toggle theme') {
+        const isDark = await browser.execute(() => document.documentElement.classList.contains('dark'));
+        const item = await $(`//*[@role="menuitem"][normalize-space()="${isDark ? 'Light' : 'Dark'}"]`);
+        await item.waitForClickable({ timeout: 5_000 });
+        await item.click();
+    }
 });
 
 Then('the {word} dropdown should be visible', async function (this: RaWorld, dropdownName: string) {

@@ -2,6 +2,7 @@ package com.example.tests.steps;
 
 import com.example.tests.config.DriverFactory;
 import com.example.tests.config.DriverHolder;
+import com.example.tests.config.Env;
 import com.example.tests.support.ElementHandler;
 import com.example.tests.support.WaitHandlers;
 import io.cucumber.java.Before;
@@ -10,6 +11,7 @@ import io.cucumber.java.Scenario;
 import com.example.tests.support.FailureCapture;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.opentest4j.TestAbortedException;
 
 public class Hooks {
 
@@ -19,6 +21,7 @@ public class Hooks {
         // Drop any error captured by the previous scenario on this thread —
         // otherwise a passing scenario could inherit the last failure's reason.
         FailureCapture.clear();
+        skipIfOtherPlatform(scenario);
         DriverHolder.set(DriverFactory.create());
         // Annotate the Grid session with the Cucumber scenario name so the
         // RobotActions dashboard shows the test name against each session.
@@ -26,6 +29,27 @@ public class Hooks {
         // against the session rather than forwarded to the browser.
         WebDriver driver = DriverHolder.get();
         ((JavascriptExecutor) driver).executeScript("ra:job-name=" + scenario.getName());
+    }
+
+    /**
+     * Skip a scenario written for another platform, before any browser starts.
+     *
+     * `@mobileweb` scenarios drive the phone layout (hamburger menu, mobile
+     * nav) and `@web` ones the desktop layout. A plain `mvn test` with
+     * PLATFORM=web used to run both, so every `@mobileweb` scenario opened a
+     * 1920px desktop browser, waited 15 s for a hamburger that does not exist
+     * there, and failed. A `-Dcucumber.filter.tags` still narrows further.
+     */
+    private static void skipIfOtherPlatform(Scenario scenario) {
+        String platform = Env.platform();
+        boolean mobileWeb = platform.equals("mobileweb") || platform.equals("ios-mobileweb");
+        java.util.Collection<String> tags = scenario.getSourceTagNames();
+        if (tags.contains("@mobileweb") && !mobileWeb) {
+            throw new TestAbortedException("@mobileweb scenario skipped on PLATFORM=" + platform);
+        }
+        if (tags.contains("@web") && !platform.equals("web")) {
+            throw new TestAbortedException("@web scenario skipped on PLATFORM=" + platform);
+        }
     }
 
     @After
