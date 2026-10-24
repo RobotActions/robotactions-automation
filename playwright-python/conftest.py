@@ -42,7 +42,11 @@ def browser_instance(base_url: str):
         endpoint = config.grid_ws_endpoint()
 
         if endpoint:
-            browser = p.chromium.connect(endpoint)
+            # Playwright's connect timeout defaults to 0 (wait forever). Bound
+            # it: the grid may queue the upgrade behind busy browsers, so allow
+            # minutes, but a connection that never completes must fail the
+            # test rather than hang the whole run.
+            browser = p.chromium.connect(endpoint, timeout=180_000)
         else:
             browser = p.chromium.launch(
                 headless=config.is_ci(),
