@@ -105,9 +105,12 @@ Feature: RobotActions homepage — full nav coverage + load profile
 
   # ── Header utility buttons ──────────────────────────────────────────
   @sanity
-  Scenario: Theme toggle flips dark/light without console errors
+  # The theme control is a dropdown (Light / Dark / System), not a two-state
+  # toggle — clicking the trigger only opens the menu. These scenarios used to
+  # click the trigger and assert a flip, which could never pass.
+  Scenario: Theme selection flips dark/light without console errors
     Given the page theme is "light" or "dark"
-    When I click the "Toggle theme" button
+    When I select the "Dark" theme
     And I wait 500 milliseconds for the theme transition
     Then the page theme should have changed
     And no console errors should have been logged
@@ -164,11 +167,11 @@ Feature: RobotActions homepage — full nav coverage + load profile
     And the Products dropdown should not be visible
 
   @sanity
-  Scenario: Theme toggle is idempotent (negative — double toggle returns to original)
+  Scenario: Theme selection is reversible (negative — reselecting the original restores it)
     Given the page theme is "light" or "dark"
-    When I click the "Toggle theme" button
+    When I select the "Dark" theme
     And I wait 500 milliseconds for the theme transition
-    And I click the "Toggle theme" button
+    And I select the "Light" theme
     And I wait 500 milliseconds for the theme transition
     Then the page theme should match the original
 

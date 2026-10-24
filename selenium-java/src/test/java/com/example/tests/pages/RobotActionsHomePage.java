@@ -149,6 +149,38 @@ public class RobotActionsHomePage extends BasePage {
     public void waitForHydration() {
         waitVisible(MAIN, longWait);
         waitForDocumentReady(longWait);
+        // Then clear the floating overlays, as a first-time visitor would. The
+        // analytics consent card sits bottom-centre on desktop and covers the
+        // lower part of the Products dropdown ("Migration & Coverage" failed
+        // with the card's <p> receiving the click). The mobile page object and
+        // the playwright template already did this; the desktop ones did not.
+        dismissOverlays();
+    }
+
+    // Decline rather than Accept: a test run should not opt into analytics.
+    private static final By CONSENT_DECLINE =
+        By.xpath("//*[@role='region']//button[normalize-space()='Decline']");
+    private static final By CHAT_GREETING_DISMISS = By.xpath(
+        "//div[contains(@class,'fixed') and contains(@class,'bottom-[90px]')]//button[@aria-label]");
+
+    /**
+     * Answer the consent card and close the chat greeting. Best-effort. The
+     * card renders 1.0-1.8 s after load on a fresh profile, so it gets a short
+     * wait; the chat greeting arrives on a timer and is closed only if already
+     * up, since waiting for it would cost every scenario 5 s.
+     */
+    public void dismissOverlays() {
+        try {
+            if (isAnyVisible(CONSENT_DECLINE, shortWait)) {
+                clickAnyVisible(CONSENT_DECLINE);
+                awaitNotDisplayed(CONSENT_DECLINE, shortWait);
+            }
+            if (findAll(CHAT_GREETING_DISMISS).stream().anyMatch(WebElement::isDisplayed)) {
+                clickAnyVisible(CHAT_GREETING_DISMISS);
+            }
+        } catch (RuntimeException ignored) {
+            // An overlay that will not close must not fail a test about the page.
+        }
     }
 
     /**
@@ -298,7 +330,24 @@ public class RobotActionsHomePage extends BasePage {
         click(linkContaining(label));
     }
 
-    // ── Theme toggle ──────────────────────────────────────────────────────
+    // ── Theme control ─────────────────────────────────────────────────────
+    //
+    // NOT a two-state toggle: a Radix dropdown whose trigger opens a Light /
+    // Dark / System menu, and the theme changes only when an item is picked.
+    // Clicking the trigger and asserting a flip could never pass; the second
+    // click of the "double toggle" was then intercepted by the open menu.
+
+    private static final By THEME_TRIGGER = By.xpath("//button[normalize-space()='Toggle theme']");
+
+    private static By themeOption(String label) {
+        return By.xpath("//*[@role='menuitem' or @role='option'][normalize-space()='" + label + "']");
+    }
+
+    /** Open the theme menu and pick {@code choice} (Light / Dark / System). */
+    public void selectTheme(String choice) {
+        clickAnyVisible(THEME_TRIGGER, shortWait);
+        click(themeOption(choice), shortWait);
+    }
 
     /**
      * Returns the current theme by inspecting the {@code class} attribute of

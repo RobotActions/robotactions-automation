@@ -169,9 +169,45 @@ class RobotActionsHomePage(BasePage):
     # ── Navigation ────────────────────────────────────────────────────────
 
     def wait_for_hydration(self) -> None:
-        """Wait for <main> to be visible and document.readyState == 'complete'."""
+        """Wait for <main> to be visible and document.readyState == 'complete'.
+
+        Then clear the floating overlays, as a first-time visitor would. The
+        analytics consent card sits bottom-centre on desktop and covers the
+        lower part of the Products dropdown: "Migration & Coverage" failed with
+        its <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+        receiving the click. The mobile page object and the playwright template
+        already did this; the desktop ones did not.
+        """
         self.wait_visible(self.MAIN, self.long_wait)
         self.wait_for_document_ready(self.long_wait)
+        self.dismiss_overlays()
+
+    # Decline rather than Accept: a test run should not opt into analytics.
+    CONSENT_DECLINE: Locator = (
+        By.XPATH, '//*[@role="region"]//button[normalize-space()="Decline"]'
+    )
+    CHAT_GREETING_DISMISS: Locator = (
+        By.XPATH,
+        '//div[contains(@class,"fixed") and contains(@class,"bottom-[90px]")]'
+        '//button[@aria-label]',
+    )
+
+    def dismiss_overlays(self) -> None:
+        """Answer the consent card and close the chat greeting. Best-effort.
+
+        The card renders 1.0-1.8 s after load on a fresh profile, so it gets a
+        short wait. The chat greeting arrives on a timer and is only closed if
+        it is already up: waiting for it would cost every scenario 5 s.
+        """
+        try:
+            if self.is_any_visible(self.CONSENT_DECLINE, self.short_wait):
+                self.click_any_visible(self.CONSENT_DECLINE)
+                self.await_not_displayed(self.CONSENT_DECLINE, self.short_wait)
+            if any(e.is_displayed() for e in self.driver.find_elements(*self.CHAT_GREETING_DISMISS)):
+                self.click_any_visible(self.CHAT_GREETING_DISMISS)
+        except Exception:
+            # An overlay that will not close must not fail a test about the page.
+            pass
 
     # ── Hero assertions ───────────────────────────────────────────────────
 
@@ -261,6 +297,7 @@ class RobotActionsHomePage(BasePage):
     def click_dropdown_item(self, label: str) -> None:
         """Click a visible dropdown link matching label by partial text."""
         self.click(self.link_containing(label))
+
 
     # ── Theme control ─────────────────────────────────────────────────────
     #
