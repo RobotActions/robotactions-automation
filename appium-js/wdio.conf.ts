@@ -125,7 +125,11 @@ export const config = {
         snippets: true,
         source: true,
         strict: false,
-        tagExpression: '',
+        // With no app configured the app features (login, …) can only fail:
+        // they would drive a placeholder package. Run the device-level smoke
+        // alone until APP_PACKAGE / BUNDLE_ID / APP_PATH is set. A CLI
+        // --cucumberOpts.tagExpression still overrides this.
+        tagExpression: process.env.APP_PACKAGE || process.env.BUNDLE_ID || process.env.APP_PATH ? '' : '@device',
         timeout: 60000,
         ignoreUndefinedDefinitions: false,
     },
